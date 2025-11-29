@@ -15,13 +15,14 @@ graph TD
     Client["Client (React SPA)"]
     LB["Load Balancer / Reverse Proxy"]
     API["Backend API (FastAPI)"]
-    DB[("Database - SQLite/MariaDB")]
+    DB["(Database - SQLite/MariaDB)"]
     AI["AI Service (OpenAI/Gemini API)"]
 
     Client -->|HTTP/REST| API
     API -->|SQLAlchemy| DB
     API -->|HTTP Request| AI
 ```
+
 ## 1.2 기술 스택 (Technology Stack)
 
 | 구분 | 기술 | 설명 |
@@ -74,7 +75,8 @@ graph TD
 erDiagram
     USERS ||--o{ ATTEMPTS : makes
     USERS ||--o{ WRONG_ANSWER_NOTES : owns
-    USERS ||--o{ GUESTBOOK : writes
+    %% GUESTBOOK is logically related but stores nickname directly for simplicity
+    USERS ||--o{ GUESTBOOK : links_via_nickname
     QUESTIONS ||--o{ ATTEMPTS : has
     QUESTIONS ||--o{ WRONG_ANSWER_NOTES : included_in
 
@@ -105,22 +107,20 @@ erDiagram
 
     GUESTBOOK {
         int id PK
-        int user_id FK
         string nickname
         int score
         int max_streak
         int difficulty
-        datetime created_at
+        datetime timestamp
     }
 
     ATTEMPTS {
         int id PK
-        int user_id FK
         string question_id FK
         text user_answer
         float similarity_score
         boolean is_correct
-        datetime created_at
+        datetime timestamp
     }
 ```
 
