@@ -10,6 +10,7 @@
 
 Context Hunter는 클라이언트-서버 구조를 따르는 웹 애플리케이션입니다.
 
+```mermaid
 graph TD
     Client["Client (React SPA)"]
     LB["Load Balancer / Reverse Proxy"]
@@ -20,7 +21,7 @@ graph TD
     Client -->|HTTP/REST| API
     API -->|SQLAlchemy| DB
     API -->|HTTP Request| AI
-
+```
 ## 1.2 기술 스택 (Technology Stack)
 
 | 구분 | 기술 | 설명 |
