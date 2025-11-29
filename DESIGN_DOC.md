@@ -67,20 +67,21 @@ graph TD
 
 ## 1.4 유스케이스 다이어그램 (Use-Case Diagram)
 
-```mermaid
-usecaseDiagram
-    actor User as "사용자"
-    actor Guest as "게스트"
-    actor Admin as "관리자"
+> **Note**: Mermaid 호환성을 위해 Graph 문법으로 표현하였습니다.
 
-    package "Context Hunter System" {
-        usecase "회원가입/로그인" as UC1
-        usecase "일일 모드 플레이" as UC2
-        usecase "도전 모드 플레이" as UC3
-        usecase "오답 노트 관리" as UC4
-        usecase "랭킹 조회" as UC5
-        usecase "결과 공유" as UC6
-    }
+```mermaid
+graph LR
+    User((사용자))
+    Guest((게스트))
+
+    subgraph System [Context Hunter System]
+        UC1(회원가입/로그인)
+        UC2(일일 모드 플레이)
+        UC3(도전 모드 플레이)
+        UC4(오답 노트 관리)
+        UC5(랭킹 조회)
+        UC6(결과 공유)
+    end
 
     User --> UC1
     User --> UC2
@@ -93,6 +94,38 @@ usecaseDiagram
     Guest --> UC3
     Guest --> UC5
     Guest --> UC6
+```
+
+## 1.5 메뉴 구성도 (Menu Structure / IA)
+
+```mermaid
+graph TD
+    Main[메인 화면]
+    
+    Main --> Auth[인증]
+    Auth --> Login[로그인]
+    Auth --> Signup[회원가입]
+    Auth --> Guest[게스트 입장]
+
+    Main --> Daily[일일 모드]
+    Daily --> Game1[게임 플레이]
+    Game1 --> Result1[결과 화면]
+    Result1 --> Share[공유하기]
+    Result1 --> NoteAdd[오답노트 추가]
+
+    Main --> Challenge[도전 모드]
+    Challenge --> Game2[게임 플레이]
+    Game2 --> Result2[결과 화면]
+    Result2 --> Ranking[랭킹/방명록]
+    Result2 --> Retry[재도전]
+
+    Main --> Note[오답 노트]
+    Note --> NoteList[목록 조회]
+    NoteList --> NoteDel[삭제]
+
+    Main --> Footer[푸터]
+    Footer --> Terms[이용약관]
+    Footer --> Privacy[개인정보처리방침]
 ```
 
 ---
