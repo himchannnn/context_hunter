@@ -18,10 +18,10 @@
 
 ``` mermaid
 graph TD
-    User[사용자 (Web/Mobile)] --> Frontend[Frontend (React/Vite)]
-    Frontend --> API[Backend API (FastAPI)]
-    API --> DB[(Database)]
-    API --> AI[AI Engine (LLM)]
+    User["사용자 (Web/Mobile)"] --> Frontend["Frontend (React/Vite)"]
+    Frontend --> API["Backend API (FastAPI)"]
+    API --> DB["(Database)"]
+    API --> AI["AI Engine (LLM)"]
 ```
 
 *   **Frontend**: 사용자 인터페이스 및 게임 로직 시각화
