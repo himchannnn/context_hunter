@@ -81,14 +81,14 @@ erDiagram
     QUESTION ||--o{ ATTEMPT : "포함된다"
     QUESTION ||--o{ WRONG_ANSWER_NOTE : "참조된다"
 
-    USER["사용자 (User)"] {
+    USER {
         PK 아이디
         string 사용자명
         string 비밀번호
         boolean 게스트여부
         datetime 가입일
     }
-    QUESTION["문제 (Question)"] {
+    QUESTION {
         PK 문제ID
         text 암호화문장
         text 정답해석
@@ -96,14 +96,14 @@ erDiagram
         int 정답수
         int 총시도수
     }
-    WRONG_ANSWER_NOTE["오답노트 (Note)"] {
+    WRONG_ANSWER_NOTE {
         PK 노트ID
         FK 사용자ID
         FK 문제ID
         text 제출답안
         datetime 생성일
     }
-    GUESTBOOK["방명록/랭킹 (Guestbook)"] {
+    GUESTBOOK {
         PK 방명록ID
         string 닉네임
         int 점수
@@ -111,7 +111,7 @@ erDiagram
         int 난이도
         datetime 기록일
     }
-    ATTEMPT["시도기록 (Attempt)"] {
+    ATTEMPT {
         PK 시도ID
         FK 문제ID
         text 제출답안
