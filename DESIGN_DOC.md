@@ -82,14 +82,14 @@ erDiagram
     QUESTION ||--o{ WRONG_ANSWER_NOTE : "참조된다"
 
     USER {
-        PK 아이디
+        int 아이디 PK
         string 사용자명
         string 비밀번호
         boolean 게스트여부
         datetime 가입일
     }
     QUESTION {
-        PK 문제ID
+        string 문제ID PK
         text 암호화문장
         text 정답해석
         int 난이도
@@ -97,14 +97,14 @@ erDiagram
         int 총시도수
     }
     WRONG_ANSWER_NOTE {
-        PK 노트ID
-        FK 사용자ID
-        FK 문제ID
+        int 노트ID PK
+        int 사용자ID FK
+        string 문제ID FK
         text 제출답안
         datetime 생성일
     }
     GUESTBOOK {
-        PK 방명록ID
+        int 방명록ID PK
         string 닉네임
         int 점수
         int 최대연속정답
@@ -112,8 +112,8 @@ erDiagram
         datetime 기록일
     }
     ATTEMPT {
-        PK 시도ID
-        FK 문제ID
+        int 시도ID PK
+        string 문제ID FK
         text 제출답안
         float 유사도점수
         boolean 정답여부
