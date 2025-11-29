@@ -16,7 +16,7 @@
 
 ## 2. 아키텍처 (Architecture)
 
-```mermaid
+``` mermaid
 graph TD
     User[사용자 (Web/Mobile)] --> Frontend[Frontend (React/Vite)]
     Frontend --> API[Backend API (FastAPI)]
