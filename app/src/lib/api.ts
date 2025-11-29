@@ -1,6 +1,6 @@
 import type { Question, VerifyResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:8001/api';
+export const API_BASE_URL = 'http://localhost:8000/api';
 
 // 난이도별 문제 목록 가져오기
 export const fetchQuestions = async (difficulty: number): Promise<Question[]> => {

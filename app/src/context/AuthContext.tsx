@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../lib/api';
 
 interface User {
     id: number;
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 토큰으로 사용자 정보 가져오기
     const fetchUser = async (token: string) => {
         try {
-            const response = await fetch('http://localhost:8001/api/users/me', {
+            const response = await fetch(`${API_BASE_URL}/users/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

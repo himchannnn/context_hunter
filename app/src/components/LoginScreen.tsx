@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../lib/api';
 
 interface LoginScreenProps {
     onSignupClick: () => void;
@@ -19,7 +20,7 @@ export default function LoginScreen({ onSignupClick }: LoginScreenProps) {
             formData.append('username', username);
             formData.append('password', password);
 
-            const response = await fetch('http://localhost:8001/api/auth/login', {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -41,7 +42,7 @@ export default function LoginScreen({ onSignupClick }: LoginScreenProps) {
     // 게스트 로그인 핸들러
     const handleGuestLogin = async () => {
         try {
-            const response = await fetch('http://localhost:8001/api/auth/guest', {
+            const response = await fetch(`${API_BASE_URL}/auth/guest`, {
                 method: 'POST',
             });
 
