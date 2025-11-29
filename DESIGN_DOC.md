@@ -71,58 +71,6 @@ graph TD
 
 ## 2.1 데이터베이스 스키마 (Database Schema)
 
-### 2.1.1 논리적 설계 (Logical ERD)
-
-```mermaid
-erDiagram
-    USER ||--o{ WRONG_ANSWER_NOTE : "작성한다"
-    USER ||--o{ ATTEMPT : "시도한다"
-    USER ||--o{ GUESTBOOK : "기록한다 (닉네임)"
-    QUESTION ||--o{ ATTEMPT : "포함된다"
-    QUESTION ||--o{ WRONG_ANSWER_NOTE : "참조된다"
-
-    USER {
-        int 아이디 PK
-        string 사용자명
-        string 비밀번호
-        boolean 게스트여부
-        datetime 가입일
-    }
-    QUESTION {
-        string 문제ID PK
-        text 암호화문장
-        text 정답해석
-        int 난이도
-        int 정답수
-        int 총시도수
-    }
-    WRONG_ANSWER_NOTE {
-        int 노트ID PK
-        int 사용자ID FK
-        string 문제ID FK
-        text 제출답안
-        datetime 생성일
-    }
-    GUESTBOOK {
-        int 방명록ID PK
-        string 닉네임
-        int 점수
-        int 최대연속정답
-        int 난이도
-        datetime 기록일
-    }
-    ATTEMPT {
-        int 시도ID PK
-        string 문제ID FK
-        text 제출답안
-        float 유사도점수
-        boolean 정답여부
-        datetime 시도일시
-    }
-```
-
-### 2.1.2 물리적 설계 (Physical ERD)
-
 ```mermaid
 erDiagram
     USERS ||--o{ ATTEMPTS : makes
