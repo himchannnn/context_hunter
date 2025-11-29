@@ -8,36 +8,39 @@ interface DifficultyScreenProps {
 
 export default function DifficultyScreen({ onStartGame, onBack }: DifficultyScreenProps) {
   return (
-    <div className="max-w-2xl w-full text-center space-y-12">
+    <div className="max-w-2xl w-full text-center space-y-8 md:space-y-12 px-4">
+      {/* 뒤로가기 버튼 */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ChevronLeft size={20} />
         뒤로가기
       </button>
 
+      {/* 타이틀 */}
       <div className="space-y-4">
-        <h2 className="text-4xl tracking-tight">연령층 선택</h2>
-        <p className="text-gray-500">자신에게 맞는 연령층을 선택하세요</p>
+        <h2 className="text-3xl md:text-4xl tracking-tight text-foreground">연령층 선택</h2>
+        <p className="text-muted-foreground">자신에게 맞는 연령층을 선택하세요</p>
       </div>
 
-      <div className="flex gap-4 justify-center">
+      {/* 난이도 선택 버튼 */}
+      <div className="flex flex-col md:flex-row gap-4 justify-center">
         <button
           onClick={() => onStartGame(1)}
-          className="px-6 py-8 border-2 border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors duration-200"
+          className="px-8 py-6 md:py-8 border-2 border-primary rounded-xl text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-xl font-bold text-lg"
         >
           청년층
         </button>
         <button
           onClick={() => onStartGame(2)}
-          className="px-6 py-8 border-2 border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors duration-200"
+          className="px-8 py-6 md:py-8 border-2 border-primary rounded-xl text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-xl font-bold text-lg"
         >
           중장년층
         </button>
         <button
           onClick={() => onStartGame(3)}
-          className="px-6 py-8 border-2 border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors duration-200"
+          className="px-8 py-6 md:py-8 border-2 border-primary rounded-xl text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-xl font-bold text-lg"
         >
           노년층
         </button>

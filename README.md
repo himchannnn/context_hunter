@@ -1,60 +1,66 @@
-# Context Hunter
+# Context Hunter (문맥 사냥꾼)
 
-A web-based game where users guess the meaning of difficult sentences based on context.
+문맥을 통해 어려운 문장의 의미를 유추하는 웹 기반 게임입니다.
 
-## Project Structure
+## 프로젝트 구조
 
-*   **`app/`**: Frontend (React + TypeScript + Vite + Tailwind CSS)
-*   **`backend/`**: Backend (FastAPI + Python + MariaDB/SQLite)
+*   **`app/`**: 프론트엔드 (React + TypeScript + Vite + Tailwind CSS)
+*   **`backend/`**: 백엔드 (FastAPI + Python + MariaDB/SQLite)
 
-## Getting Started
+## 시작하기 (Getting Started)
 
-### 1. Backend Setup
+### 1. 백엔드 설정 (Backend Setup)
 
-Navigate to the `backend` directory:
+`backend` 폴더로 이동합니다:
 
 ```bash
 cd backend
 ```
 
-Install dependencies:
+필요한 라이브러리를 설치합니다:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the server:
+**데이터베이스 초기화 (최초 실행 시 필수):**
 
 ```bash
-# Development mode
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python seed.py
 ```
 
-The API will be available at `http://localhost:8000`.
-API Documentation: `http://localhost:8000/docs`
+서버를 실행합니다:
 
-### 2. Frontend Setup
+```bash
+# 개발 모드
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-Navigate to the `app` directory:
+API 주소: `http://localhost:8000`
+API 문서: `http://localhost:8000/docs`
+
+### 2. 프론트엔드 설정 (Frontend Setup)
+
+`app` 폴더로 이동합니다:
 
 ```bash
 cd app
 ```
 
-Install dependencies:
+필요한 라이브러리를 설치합니다:
 
 ```bash
 npm install
 ```
 
-Run the development server:
+개발 서버를 실행합니다:
 
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
+웹사이트 주소: `http://localhost:5173`
 
-## Deployment
+## 배포 (Deployment)
 
-See `deploy_guide.md` for instructions on deploying to the school server.
+학교 서버 배포 방법은 `deploy_guide.md` 파일을 참고하세요.
