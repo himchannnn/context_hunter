@@ -1,223 +1,94 @@
-# Context Hunter - 시스템 설계 문서 (HLD & LLD)
+# Context Hunter - System Design Document (HLD & LLD)
 
-이 문서는 Context Hunter 프로젝트의 고수준 설계(HLD)와 저수준 설계(LLD)를 통합하여 기술합니다.
+## ✅ HLD (High-Level Design) 문서
+
+### 1. HLD의 목적
+본 문서는 **Context Hunter** 시스템의 전체 구조를 한눈에 이해할 수 있도록 제공하는 것을 목적으로 합니다. 아키텍처, 주요 모듈, 데이터 흐름 등을 상위 수준에서 설명하여 개발자, PM, 고객 등 모든 이해관계자가 시스템 구성을 명확히 이해할 수 있도록 작성되었습니다.
+
+### 2. 시스템 개요 (System Overview)
+*   **시스템 목적**: 사용자가 문맥에 맞는 적절한 단어를 선택하거나 입력하여 문해력을 향상시킬 수 있는 웹 기반 게임 서비스 제공. 단순 암기가 아닌 문맥적 의미 파악 능력 배양.
+*   **전체 기능 요약**:
+    *   **사용자 관리**: 회원가입, 로그인(JWT), 게스트 모드
+    *   **게임 플레이**: 일일 모드(10문제), 도전 모드(무한/3Life)
+    *   **AI 분석**: 답안 유사도 분석 및 정답 판별
+    *   **학습 보조**: 오답 노트, 랭킹 시스템, 소셜 공유
+*   **사용자 유형 및 시나리오**:
+    *   **일반 사용자**: 로그인 후 기록 저장, 랭킹 경쟁, 오답 복습
+    *   **게스트**: 로그인 없이 가볍게 게임 체험 (기록 저장 제한)
+*   **운영 환경**:
+    *   **Client**: Modern Web Browser (Chrome, Edge, Safari 등)
+    *   **Server**: Python Runtime (Windows/Linux)
+    *   **Network**: 인터넷 연결 필수 (AI API 통신)
+
+### 3. 전체 아키텍처 (System Architecture)
+*   **전체 시스템 블록 다이어그램**:
+```mermaid
+graph TD
+    User[User (Browser)]
+    LB[Load Balancer / Reverse Proxy]
+    FE[Frontend (React SPA)]
+    BE[Backend API (FastAPI)]
+    DB[(Database - SQLite/MariaDB)]
+    AI[AI Service (OpenAI/Gemini)]
+
+    User -->|HTTPS| LB
+    LB -->|Static Files| FE
+    LB -->|API Request| BE
+    BE -->|SQLAlchemy| DB
+    BE -->|HTTP Request| AI
+```
+*   **계층 구조**:
+    *   **Frontend**: React, TypeScript, Tailwind CSS (UI/UX 담당)
+    *   **Backend**: FastAPI, Pydantic (비즈니스 로직, API 제공)
+    *   **Database**: SQLite/MariaDB (데이터 영구 저장)
+
+### 4. 기술 스택 (Tech Stack)
+*   **언어 / 프레임워크**:
+    *   Frontend: TypeScript, React 19, Vite
+    *   Backend: Python 3.x, FastAPI
+*   **데이터베이스**: SQLite (개발), MariaDB (운영)
+*   **메시징 시스템**: (현재 미사용, 추후 Redis 도입 고려)
+*   **외부 서비스**: OpenAI API / Google Gemini API (문맥 분석)
+
+### 5. 데이터 흐름 (Data Flow)
+*   **사용자 요청 → 처리 → 응답 흐름 (정답 검증 예시)**:
+    1.  **User**: 답안 입력 및 제출
+    2.  **Frontend**: `POST /api/verify` 요청 전송
+    3.  **Backend**: DB에서 정답 조회 -> AI API로 유사도 분석 요청 -> 결과 판별 -> DB 저장
+    4.  **Frontend**: 결과(정답/오답, 유사도) 수신 및 UI 표시
+
+### 6. 주요 모듈 설명 (Key Modules)
+*   **Auth Module**: 사용자 인증/인가 담당. (Input: ID/PW, Output: JWT Token)
+*   **Game Core Module**: 문제 출제 및 정답 검증 로직. (Input: User Answer, Output: Score/Feedback)
+*   **Ranking Module**: 점수 집계 및 순위 산정. (Role: Leaderboard 관리)
+*   **Note Module**: 오답 데이터 관리. (Role: 개인화 학습 데이터 저장)
+
+### 7. 인터페이스 정의 (High-Level API)
+*   **Auth**: `/api/auth/*` (로그인, 회원가입, 게스트)
+*   **Game**: `/api/questions` (문제 조회), `/api/verify` (검증)
+*   **User**: `/api/users/me` (내 정보), `/api/notes` (오답노트)
+*   **Rank**: `/api/rankings` (랭킹 조회), `/api/guestbook` (기록 저장)
+
+### 8. 성능/보안/확장성 고려
+*   **확장성 전략**: Backend API의 Stateless 설계로 수평 확장 용이.
+*   **보안 모델**:
+    *   **인증**: JWT 기반 Bearer Token 인증.
+    *   **인가**: 일반 유저 vs 게스트 권한 분리.
+*   **예상 성능**: 동시 접속 100명 수준에서 응답 속도 200ms 이내 (AI 분석 제외).
+
+### 9. 제한사항 및 가정
+*   **제한사항**: AI API 호출 비용 및 속도 이슈 발생 가능 (캐싱 필요).
+*   **가정**: 사용자는 최신 브라우저를 사용하며, 안정적인 인터넷 환경에 있다.
 
 ---
 
-# 1. High-Level Design (HLD)
+## ✅ LLD (Low-Level Design) 문서
 
-## 1.1 시스템 아키텍처 (System Architecture)
+### 1. LLD의 목적
+개발자가 바로 코딩할 수 있도록 구현 상세를 제공합니다. 클래스, 함수, DB 스키마, 오류 처리 등을 구체적으로 정의합니다.
 
-Context Hunter는 클라이언트-서버 구조를 따르는 웹 애플리케이션입니다.
-
-```mermaid
-graph TD
-    Client["Client (React SPA)"]
-    LB["Load Balancer / Reverse Proxy"]
-    API["Backend API (FastAPI)"]
-    DB["(Database - SQLite/MariaDB)"]
-    AI["AI Service (OpenAI/Gemini API)"]
-
-    Client -->|HTTP/REST| API
-    API -->|SQLAlchemy| DB
-    API -->|HTTP Request| AI
-```
-
-## 1.2 기술 스택 (Technology Stack)
-
-| 구분 | 기술 | 설명 |
-|---|---|---|
-| **Frontend** | React, TypeScript | 사용자 인터페이스 구현 |
-| | Vite | 빌드 도구 및 개발 서버 |
-| | Tailwind CSS | 스타일링 프레임워크 |
-| **Backend** | Python, FastAPI | 고성능 비동기 웹 프레임워크 |
-| | SQLAlchemy | ORM (Object Relational Mapping) |
-| | Pydantic | 데이터 검증 및 설정 관리 |
-| | JWT (Jose) | 사용자 인증 및 토큰 관리 |
-| **Database** | SQLite (Dev) / MariaDB (Prod) | 관계형 데이터베이스 |
-| **AI** | OpenAI / Gemini API | 문맥 유사도 분석 및 문제 생성 |
-
-## 1.3 주요 기능 및 모듈 (Key Features & Modules)
-
-1.  **사용자 관리 (User Management)**
-    *   회원가입, 로그인 (JWT 기반)
-    *   게스트 로그인 지원
-2.  **게임 플레이 (Game Play)**
-    *   **일일 모드 (Daily Mode)**: 매일 10문제 풀이
-    *   **도전 모드 (Challenge Mode)**: 무한 모드, 3번 틀리면 종료
-    *   난이도 조절 (청년층, 중장년층, 노년층)
-3.  **AI 분석 (AI Analysis)**
-    *   사용자 입력 답안과 정답의 문맥 유사도 분석 (0~100%)
-    *   정답 여부 판별
-4.  **오답 노트 (Wrong Answer Note)**
-    *   틀린 문제 저장 및 복습 기능
-5.  **랭킹 시스템 (Ranking System)**
-    *   도전 모드 점수 기록 및 글로벌 순위 표시 (로그인 사용자 전용)
-    *   **랭킹 뱃지 (Ranking Badges)**: 순위에 따라 프로필 아이콘에 뱃지 표시 (1위~100위)
-    *   **명예의 전당 (Hall of Fame)**: 메인 화면에 상위 3명 랭킹 표시
-6.  **소셜 공유 (Social Sharing)**
-    *   일일 모드 결과를 이모지 또는 텍스트 형태로 클립보드에 복사하여 공유
-    *   Clipboard API 미지원 환경을 위한 Fallback 메커니즘 적용
-7.  **피드백 시스템 (Feedback System)**
-    *   **청각적**: Web Audio API를 이용한 효과음 (정답/오답/클릭)
-    *   **시각적**: 오답 시 화면 흔들림 효과 (Shake Animation)
-8.  **UI/UX 개선**
-    *   **푸터 (Footer)**: 저작권 및 관련 링크 제공
-    *   **프로필 뱃지**: 랭킹에 따른 시각적 보상 제공
-
-## 1.4 유스케이스 다이어그램 (Use-Case Diagram)
-
-> **Note**: Mermaid 호환성을 위해 Graph 문법으로 표현하였습니다.
-
-```mermaid
-graph LR
-    User((사용자))
-    Guest((게스트))
-
-    subgraph System [Context Hunter System]
-        UC1(회원가입/로그인)
-        UC2(일일 모드 플레이)
-        UC3(도전 모드 플레이)
-        UC4(오답 노트 관리)
-        UC5(랭킹 조회)
-        UC6(결과 공유)
-    end
-
-    User --> UC1
-    User --> UC2
-    User --> UC3
-    User --> UC4
-    User --> UC5
-    User --> UC6
-
-    Guest --> UC2
-    Guest --> UC3
-    Guest --> UC5
-    Guest --> UC6
-```
-
-## 1.5 메뉴 구성도 (Menu Structure / IA)
-
-```mermaid
-graph TD
-    Main[메인 화면]
-    
-    Main --> Auth[인증]
-    Auth --> Login[로그인]
-    Auth --> Signup[회원가입]
-    Auth --> Guest[게스트 입장]
-
-    Main --> Daily[일일 모드]
-    Daily --> Game1[게임 플레이]
-    Game1 --> Result1[결과 화면]
-    Result1 --> Share[공유하기]
-    Result1 --> NoteAdd[오답노트 추가]
-
-    Main --> Challenge[도전 모드]
-    Challenge --> Game2[게임 플레이]
-    Game2 --> Result2[결과 화면]
-    Result2 --> Ranking[랭킹/방명록]
-    Result2 --> Retry[재도전]
-
-    Main --> Note[오답 노트]
-    Note --> NoteList[목록 조회]
-    NoteList --> NoteDel[삭제]
-
-    Main --> Footer[푸터]
-    Footer --> Terms[이용약관]
-    Footer --> Privacy[개인정보처리방침]
-```
-
----
-
-*   `POST /api/auth/login`: 로그인 (Access Token 발급)
-*   `POST /api/auth/guest`: 게스트 로그인
-*   `GET /api/users/me`: 현재 사용자 정보 조회
-
-### 문제 (Questions)
-*   `GET /api/questions`: 난이도별 문제 목록 조회
-*   `POST /api/verify`: 정답 확인 및 유사도 검사
-
-### 오답 노트 (Notes)
-*   `POST /api/notes`: 오답 노트 생성
-*   `GET /api/notes`: 내 오답 노트 조회
-*   `DELETE /api/notes/{note_id}`: 오답 노트 삭제
-
-### 랭킹/방명록 (Rankings)
-*   `GET /api/rankings`: 글로벌 랭킹 조회 (통합 랭킹)
-*   `POST /api/guestbook`: 랭킹(방명록) 저장 (로그인 유저 자동 저장)
-
-## 2.3 프론트엔드 컴포넌트 구조 (Frontend Component Tree)
-
-```text
-App
-├── AuthProvider (Context)
-├── SoundProvider (Context)
-├── AppContent
-│   ├── LoginScreen
-│   ├── SignupScreen
-│   ├── MainScreen
-│   │   ├── ModeSelection
-│   │   └── WrongAnswerNoteButton
-│   ├── DifficultyScreen
-│   ├── GameScreen
-│   │   ├── QuestionDisplay
-│   │   ├── AnswerInput
-│   │   └── FeedbackDisplay (Sound/Shake)
-│   ├── DailyResultScreen
-│   │   └── ResultList (Share Button)
-│   ├── ChallengeResultScreen
-│   │   ├── RankingList (Global Leaderboard)
-│   │   └── GuestbookForm
-│   └── WrongAnswerNoteScreen
-│       └── NoteList
-```
-
-## 2.4 시퀀스 다이어그램 (Sequence Diagrams)
-
-### 2.4.1 정답 검증 프로세스 (Answer Verification)
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant Backend
-    participant AI_Service
-    participant DB
-
-    User->>Frontend: 답안 입력 및 제출
-    Frontend->>Backend: POST /api/verify (questionId, userAnswer)
-    Backend->>DB: 문제 정보 조회 (정답 문장)
-    DB-->>Backend: Return Question Data
-    Backend->>Backend: 텍스트 전처리 (Normalization)
-    Backend->>AI_Service: 유사도 분석 요청 (Prompt Engineering)
-    AI_Service-->>Backend: 유사도 점수 반환
-    Backend->>Backend: 정답 여부 판별 (Threshold >= 80)
-    Backend->>DB: 시도(Attempt) 기록 저장
-    Backend-->>Frontend: 결과 반환 (isCorrect, similarity, feedback)
-    Frontend->>User: 결과 및 피드백 표시
-```
-
-### 2.4.2 오답 노트 저장 (Save Wrong Answer Note)
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant Backend
-    participant DB
-
-    User->>Frontend: "오답노트에 추가" 클릭
-    Frontend->>Backend: POST /api/notes (token, questionId, userAnswer)
-    Backend->>Backend: 토큰 검증 (User ID 추출)
-    Backend->>DB: 오답 노트 레코드 생성
-    DB-->>Backend: Success
-    Backend-->>Frontend: 200 OK
-    Frontend->>User: "저장되었습니다" 알림
-```
-
-## 2.5 클래스 다이어그램 (Class Diagram)
-
+### 2. 클래스/모듈 상세 디자인 (Class/Module Design)
+*   **Backend Class Diagram (SQLAlchemy Models)**:
 ```mermaid
 classDiagram
     class User {
@@ -225,66 +96,118 @@ classDiagram
         +string username
         +string hashed_password
         +boolean is_guest
-        +create_note()
-        +view_ranking()
+        +datetime created_at
     }
-
     class Question {
         +string id
         +text encoded_text
         +text correct_meaning
         +int difficulty
-        +verify_answer()
+        +float success_rate
     }
-
-    class WrongAnswerNote {
+    class Attempt {
         +int id
-        +int user_id
         +string question_id
         +text user_answer
+        +float similarity_score
+        +boolean is_correct
     }
+    User "1" --> "*" Attempt : creates
+    Question "1" --> "*" Attempt : has
+```
+*   **책임**:
+    *   `User`: 사용자 계정 및 인증 정보 관리.
+    *   `Question`: 문제 데이터 및 정답 정보 관리.
+    *   `Attempt`: 사용자의 문제 풀이 이력 및 분석 결과 저장.
 
-    class Guestbook {
-        +int id
-        +string nickname
-        +int score
-        +int max_streak
-    }
+### 3. API 상세 설계 (API Specifications)
 
-    class AuthService {
-        +login(username, password)
-        +register(username, password)
-        +create_guest()
-    }
+#### 3.1 Auth API
+*   **POST /api/auth/login**
+    *   **Request Body**: `username` (str), `password` (str)
+    *   **Response**: `{ "access_token": "...", "token_type": "bearer" }`
+    *   **Error**: 401 (Incorrect username or password)
+    *   **Validation**: username/password 필수.
 
-    class GameService {
-        +get_questions(difficulty)
-        +verify_answer(questionId, answer)
-        +update_ranking(user, score)
-    }
+#### 3.2 Game API
+*   **POST /api/verify**
+    *   **Request Body**: `{ "questionId": "q1", "userAnswer": "..." }`
+    *   **Response**: `{ "isCorrect": true, "similarity": 0.95, "feedback": "Good!" }`
+    *   **Logic**:
+        1.  DB에서 `questionId` 조회.
+        2.  `userAnswer` 전처리 (trim).
+        3.  AI 유사도 분석 수행.
+        4.  유사도 >= 80% 이면 정답 처리.
 
-    User "1" --> "*" WrongAnswerNote : owns
-    User "1" ..> "1" Guestbook : updates
-    AuthService ..> User : manages
-    GameService ..> Question : retrieves
-    GameService ..> Guestbook : updates
+### 4. 시퀀스 다이어그램 (Detailed Sequence)
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+    participant AI
+
+    Client->>API: POST /api/verify (ans)
+    API->>DB: SELECT * FROM questions WHERE id=...
+    DB-->>API: Question Data
+    API->>AI: Analyze Similarity(ans, correct)
+    AI-->>API: Score (0.9)
+    API->>API: isCorrect = Score >= 0.8
+    API->>DB: INSERT INTO attempts ...
+    API-->>Client: 200 OK {isCorrect: true, ...}
 ```
 
-## 2.6 핵심 로직 및 함수 (Core Logic & Functions)
+### 5. DB 상세 설계 (Database Schema)
+*   **users Table**:
+    *   `id`: Integer, PK, Auto Increment
+    *   `username`: Varchar(50), Unique, Nullable (Guest)
+    *   `hashed_password`: Varchar(255)
+    *   `is_guest`: Boolean, Default False
+*   **questions Table**:
+    *   `id`: Varchar(50), PK
+    *   `correct_meaning`: Text, Not Null
+    *   `difficulty`: Integer, Default 1
+*   **attempts Table**:
+    *   `id`: Integer, PK
+    *   `similarity_score`: Float
+    *   `is_correct`: Boolean
 
-### Backend (`backend/crud.py`)
+### 6. 알고리즘/로직 상세 (Algorithm & Logic)
+*   **정답 유사도 분석 (Pseudocode)**:
+    ```python
+    def verify_answer(user_answer, correct_meaning):
+        cleaned_answer = user_answer.strip().lower()
+        cleaned_correct = correct_meaning.strip().lower()
+        
+        # 1. Exact Match
+        if cleaned_answer == cleaned_correct:
+            return 1.0, True
+            
+        # 2. AI Analysis (Fallback to SequenceMatcher if AI fails)
+        try:
+            score = call_ai_api(cleaned_answer, cleaned_correct)
+        except:
+            score = difflib.SequenceMatcher(None, cleaned_answer, cleaned_correct).ratio()
+            
+        is_correct = score >= 0.8
+        return score, is_correct
+    ```
 
-| 함수명 | 설명 | 주요 로직 |
-| :--- | :--- | :--- |
-| `verify_answer` | 정답 검증 및 결과 반환 | 1. 답안 정규화 (공백 제거, 소문자)<br>2. `difflib` 유사도 계산<br>3. 임계값(80%) 이상 시 정답 처리<br>4. `Attempt` 기록 저장 |
-| `create_guestbook_entry` | 랭킹(방명록) 저장 | 1. 닉네임으로 기존 기록 조회<br>2. 점수가 더 높거나, 스트릭이 더 높은 경우만 업데이트 (Best Score 유지) |
-| `get_questions_by_difficulty` | 문제 목록 조회 | 난이도별 문제 랜덤 추출 (현재는 순차 조회) |
-| `create_note_entry` | 오답 노트 생성 | 중복 확인 후 생성 또는 업데이트 |
+### 7. 상태 정의 (State Definitions)
+*   **Game State (Frontend)**:
+    *   `IDLE`: 대기 상태
+    *   `PLAYING`: 문제 풀이 중
+    *   `LOADING`: API 요청 중 (검증/로딩)
+    *   `FINISHED`: 결과 화면 표시
 
-### Frontend (`app/src/lib/api.ts`)
+### 8. 구성 파일/환경 변수 (Config & Env)
+*   **.env File**:
+    *   `SECRET_KEY`: JWT 서명 키 (필수)
+    *   `DATABASE_URL`: DB 연결 URL (예: `sqlite:///./app.db`)
+    *   `OPENAI_API_KEY`: AI API 키
+*   **Port**: Backend 8000 (Default), Frontend 5173 (Vite Default)
 
-| 함수명 | 설명 |
-| :--- | :--- |
-| `fetchRankings` | `/api/rankings` 호출하여 글로벌 랭킹 데이터 조회 |
-| `verifyAnswer` | `/api/verify` 호출하여 정답 여부 및 유사도 확인 |
-| `saveNote` | `/api/notes` 호출하여 오답 노트 저장 |
+### 9. 보안 세부 구현 (Security Detail)
+*   **토큰 생성**: `python-jose` 라이브러리 사용, `HS256` 알고리즘. Payload에 `sub: username` 포함.
+*   **암호화**: `passlib[bcrypt]` 사용하여 비밀번호 단방향 해시 저장.
+*   **로그 정책**: 주요 에러 및 API 호출 정보는 `debug.log` 파일에 기록 (운영 시 Log Rotation 적용 필요).
