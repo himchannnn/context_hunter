@@ -33,12 +33,12 @@
 ### 3.1 전체 시스템 블록 다이어그램
 ```mermaid
 graph TD
-    User[User (Browser)]
-    LB[Load Balancer / Reverse Proxy]
-    FE[Frontend (React SPA)]
-    BE[Backend API (FastAPI)]
-    DB[(Database)]
-    AI[AI Service (OpenAI/Gemini)]
+    User["User (Browser)"]
+    LB["Load Balancer / Reverse Proxy"]
+    FE["Frontend (React SPA)"]
+    BE["Backend API (FastAPI)"]
+    DB["(Database)"]
+    AI["AI Service (OpenAI/Gemini)"]
 
     User -->|HTTPS| LB
     LB -->|Static Files| FE
