@@ -31,7 +31,10 @@ def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
         for q in questions
     ]
 
-from .ai import check_similarity
+try:
+    from .ai import check_similarity
+except ImportError:
+    from ai import check_similarity
 
 # 정답 확인 및 결과 저장 함수
 def verify_answer(db: Session, question_id: str, user_answer: str):

@@ -2,7 +2,7 @@ import urllib.request
 import json
 import urllib.error
 
-BASE_URL = "http://localhost:8000/api"
+BASE_URL = "http://localhost:8001/api"
 
 def post_json(url, data):
     req = urllib.request.Request(

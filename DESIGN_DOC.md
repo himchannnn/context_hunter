@@ -206,7 +206,7 @@ sequenceDiagram
     *   `OPENAI_API_KEY`: AI API 키 (Llama 3.1 사용 시)
     *   `AI_BASE_URL`: AI API Base URL (예: Groq, Ollama 등)
     *   `AI_MODEL_NAME`: 사용할 모델명 (Default: llama-3.1-8b-instant)
-*   **Port**: Backend 8000 (Default), Frontend 5173 (Vite Default)
+*   **Port**: Backend 8001 (Default), Frontend 5173 (Vite Default)
 
 ### 9. 보안 세부 구현 (Security Detail)
 *   **토큰 생성**: `python-jose` 라이브러리 사용, `HS256` 알고리즘. Payload에 `sub: username` 포함.

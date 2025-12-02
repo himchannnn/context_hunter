@@ -63,9 +63,10 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
                 playTone(783.99, 'sine', 0.2, now + 0.2, 0.1); // G5
                 break;
             case 'wrong':
-                // Error buzz (Low Sawtooth)
-                playTone(150, 'sawtooth', 0.3, now, 0.1);
-                playTone(140, 'sawtooth', 0.3, now, 0.1); // Dissonance
+                // 부드러운 불협화음 (낮은 Sine파 두 개를 섞음)
+                // G3(196Hz)와 C#3(138.5Hz)는 트라이톤 관계라 미묘하게 어긋난 느낌을 줍니다.
+                playTone(196, 'sine', 0.4, now, 0.15);
+                playTone(138.5, 'sine', 0.4, now, 0.15);
                 break;
             case 'click':
                 // Short tick

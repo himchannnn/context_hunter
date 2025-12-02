@@ -33,11 +33,11 @@ python seed.py
 
 ```bash
 # 개발 모드
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-API 주소: `http://localhost:8000`
-API 문서: `http://localhost:8000/docs`
+API 주소: `http://localhost:8001`
+API 문서: `http://localhost:8001/docs`
 
 ### 2. 프론트엔드 설정 (Frontend Setup)
 
