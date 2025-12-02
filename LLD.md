@@ -114,10 +114,10 @@ sequenceDiagram
     
     Backend->>AI_Service: Request Similarity Analysis
     activate AI_Service
-    AI_Service-->>Backend: Similarity Score (0.0 - 1.0)
+    AI_Service-->>Backend: Similarity Score (0 - 100)
     deactivate AI_Service
     
-    Backend->>Backend: Check Threshold (>= 0.8)
+    Backend->>Backend: Check Threshold (>= 85)
     Backend->>DB: Save Attempt Log
     
     Backend-->>Frontend: Response (isCorrect, similarity, feedback)
@@ -145,8 +145,8 @@ sequenceDiagram
 2.  **Process**:
     *   DB에서 `questionId`로 문제 조회 (`correct_meaning` 획득)
     *   `userAnswer` 전처리 (trim, lowercase)
-    *   **AI API 호출**: `userAnswer`와 `correct_meaning` 간의 의미적 유사도 분석 요청
-    *   **Threshold Check**: 유사도 80% 이상이면 `isCorrect = True`
+    *   **AI API 호출**: `userAnswer`와 `correct_meaning` 간의 의미적 유사도 분석 요청 (multilingual-e5-small)
+    *   **Threshold Check**: 유사도 85점 이상이면 `isCorrect = True`
     *   `Attempt` 테이블에 로그 저장
 3.  **Output**: `isCorrect`, `similarity`, `feedback`
 
@@ -168,7 +168,9 @@ sequenceDiagram
 ### 6.2 환경 변수 (.env)
 *   `SECRET_KEY`: JWT 서명용 비밀키
 *   `DATABASE_URL`: DB 연결 문자열 (예: `sqlite:///./context_hunter.db`)
-*   `OPENAI_API_KEY` / `GEMINI_API_KEY`: AI 서비스 연동 키
+*   `OPENAI_API_KEY`: AI API 키 (Llama 3.1 사용 시)
+*   `AI_BASE_URL`: AI API Base URL (예: Groq, Ollama 등)
+*   `AI_MODEL_NAME`: 사용할 모델명 (Default: llama-3.1-8b-instant)
 
 ## 7. 제한사항 및 예외 처리
 *   **API Error Handling**: `HTTPException`을 사용하여 명확한 상태 코드(400, 401, 404, 500) 반환

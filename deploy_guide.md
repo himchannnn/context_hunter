@@ -31,13 +31,22 @@ EXIT;
 ```bash
 cd backend
 pip install -r requirements.txt
+
+# 참고: 최초 실행 시 multilingual-e5-small 모델(약 500MB)이 다운로드됩니다.
+# 서버에 최소 1GB 이상의 여유 메모리가 필요합니다.
 ```
 
 `backend` 폴더 안에 `.env` 파일을 생성합니다:
 
 ```bash
 # backend/.env
+# backend/.env
 DATABASE_URL=mysql+pymysql://hunter_user:your_secure_password@localhost/context_hunter
+
+# AI Configuration
+AI_API_KEY=your_api_key_here
+AI_BASE_URL=https://api.groq.com/openai/v1
+AI_MODEL_NAME=llama-3.1-8b-instant
 ```
 
 **중요: 데이터베이스 초기화**
