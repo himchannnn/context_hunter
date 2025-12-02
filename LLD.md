@@ -14,6 +14,8 @@ classDiagram
         +string hashed_password
         +boolean is_guest
         +datetime created_at
+        +verify_password(plain_pw) bool
+        +create_guest() User
     }
 
     class Question {
@@ -22,9 +24,7 @@ classDiagram
         +text original_text
         +text correct_meaning
         +int difficulty
-        +int correct_count
-        +int total_attempts
-        +float success_rate
+        +get_random_question(difficulty) Question
     }
 
     class WrongAnswerNote {
@@ -33,6 +33,7 @@ classDiagram
         +string question_id
         +text user_answer
         +datetime created_at
+        +create_note(user_id, question_id, answer)
     }
 
     class Attempt {
@@ -42,6 +43,7 @@ classDiagram
         +float similarity_score
         +boolean is_correct
         +datetime timestamp
+        +log_attempt(question_id, answer, score)
     }
 
     class Guestbook {
@@ -51,12 +53,14 @@ classDiagram
         +int max_streak
         +int difficulty
         +datetime timestamp
+        +update_ranking(nickname, score)
     }
 
     User "1" --> "*" WrongAnswerNote : has
     Question "1" --> "*" WrongAnswerNote : referenced_by
     Question "1" --> "*" Attempt : has_logs
 ```
+
 
 ### 2.2 Pydantic Schemas (Data Transfer Objects)
 *   **User**: `UserCreate`, `UserLogin`, `UserResponse`
@@ -68,12 +72,13 @@ classDiagram
 ## 3. API 상세 설계 (API Specifications)
 
 ### 3.1 Auth API
-| Method | Endpoint | Request Body | Response Body | 설명 |
+| Method | Endpoint | Request Body (Validation) | Response Body | 설명 |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/api/auth/register` | `{username, password}` | `UserResponse` | 회원가입 |
+| POST | `/api/auth/register` | `{username(3-20자), password(8자+, 특수문자)}` | `UserResponse` | 회원가입 |
 | POST | `/api/auth/login` | `OAuth2PasswordRequestForm` | `{access_token, token_type}` | 로그인 |
 | POST | `/api/auth/guest` | - | `{access_token, token_type}` | 게스트 로그인 |
 | GET | `/api/users/me` | - | `UserResponse` | 내 정보 조회 |
+
 
 ### 3.2 Game API
 | Method | Endpoint | Query Params | Request Body | Response Body | 설명 |
@@ -91,40 +96,62 @@ classDiagram
 | Method | Endpoint | Request Body | Response Body | 설명 |
 | :--- | :--- | :--- | :--- | :--- |
 | GET | `/api/rankings` | - | `List[RankingEntry]` | 랭킹 조회 |
-| POST | `/api/guestbook` | `{nickname, score, ...}` | - | 랭킹(방명록) 저장 |
+| POST | `/api/guestbook` | `{nickname(2-10자, 비속어 금지), score}` | - | 랭킹(방명록) 저장 |
 
+### 3.6 Error Codes
+| Code | Status | Description |
+| :--- | :--- | :--- |
+| `ERR_USER_DUPLICATE` | 400 | 이미 존재하는 사용자명입니다. |
+| `ERR_AUTH_FAILED` | 401 | 아이디 또는 비밀번호가 일치하지 않습니다. |
+| `ERR_QUESTION_NOT_FOUND` | 404 | 요청한 문제를 찾을 수 없습니다. |
+| `ERR_AI_SERVICE_TIMEOUT` | 503 | AI 서비스 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요. |
+
+
+### 3.5 Sequence Diagram (Answer Verification)
 ### 3.5 Sequence Diagram (Answer Verification)
 ```mermaid
 sequenceDiagram
     participant User
-    participant Frontend
-    participant Backend
-    participant DB
-    participant AI_Service
+    participant FE as Frontend
+    participant BE as Backend
+    participant DB as Database
+    participant AI as AI Service
 
-    User->>Frontend: Input Answer & Submit
-    Frontend->>Backend: POST /api/verify (questionId, userAnswer)
-    activate Backend
-    Backend->>DB: Get Question (correct_meaning)
+    User->>FE: Input Answer & Submit
+    FE->>BE: POST /api/verify (questionId, userAnswer)
+    activate BE
+    
+    BE->>DB: Get Question (correct_meaning)
     activate DB
-    DB-->>Backend: Question Data
+    alt Question Not Found
+        DB-->>BE: None
+        BE-->>FE: 404 Not Found (ERR_QUESTION_NOT_FOUND)
+    else Question Found
+        DB-->>BE: Question Data
+    end
     deactivate DB
     
-    Backend->>Backend: Preprocess Answer (trim, lower)
+    BE->>BE: Preprocess Answer (trim, lower)
     
-    Backend->>AI_Service: Request Similarity Analysis
-    activate AI_Service
-    AI_Service-->>Backend: Similarity Score (0 - 100)
-    deactivate AI_Service
+    BE->>AI: Request Similarity Analysis
+    activate AI
+    alt AI Service Error / Timeout
+        AI-->>BE: Error
+        BE->>BE: Fallback Logic (SequenceMatcher)
+    else Success
+        AI-->>BE: Similarity Score (0 - 100)
+    end
+    deactivate AI
     
-    Backend->>Backend: Check Threshold (>= 85)
-    Backend->>DB: Save Attempt Log
+    BE->>BE: Check Threshold (>= 85)
+    BE->>DB: Save Attempt Log
     
-    Backend-->>Frontend: Response (isCorrect, similarity, feedback)
-    deactivate Backend
+    BE-->>FE: Response (isCorrect, similarity, feedback)
+    deactivate BE
     
-    Frontend->>User: Show Result & Feedback
+    FE->>User: Show Result & Feedback
 ```
+
 
 ## 4. DB 상세 설계 (Database Schema)
 
@@ -137,6 +164,12 @@ sequenceDiagram
 
 ### 4.2 ERD (Entity Relationship Diagram)
 > 위 클래스 다이어그램 참조 (1:N 관계 위주)
+
+### 4.3 Indexing Strategy
+*   **idx_attempts_user_question**: `attempts(user_id, question_id)` - 사용자의 특정 문제 풀이 이력 조회 최적화
+*   **idx_users_username**: `users(username)` - 로그인 및 중복 가입 방지 (Unique Constraint)
+*   **idx_guestbook_score**: `guestbook(score DESC, timestamp ASC)` - 랭킹 리스트 조회 성능 향상
+
 
 ## 5. 알고리즘/로직 상세 (Core Logic)
 
@@ -171,6 +204,24 @@ sequenceDiagram
 *   `OPENAI_API_KEY`: AI API 키 (Llama 3.1 사용 시)
 *   `AI_BASE_URL`: AI API Base URL (예: Groq, Ollama 등)
 *   `AI_MODEL_NAME`: 사용할 모델명 (Default: llama-3.1-8b-instant)
+
+### 6.3 Logging Policy
+*   **Access Log**: API 요청/응답 시간, 상태 코드, 클라이언트 IP (Nginx/Uvicorn 레벨)
+*   **Application Log**:
+    *   **INFO**: 주요 사용자 액션 (로그인, 게임 시작, 랭킹 등록)
+    *   **WARNING**: AI 서비스 지연, 잘못된 입력값 반복
+    *   **ERROR**: 500 에러 발생 시 Stack Trace, DB 연결 실패
+
+### 6.4 Environment Configuration
+*   **Development**:
+    *   DB: SQLite (`context_hunter.db`)
+    *   Debug: `True` (상세 에러 메시지 노출)
+    *   CORS: `*` (모든 출처 허용)
+*   **Production**:
+    *   DB: MariaDB (AWS RDS or Local Server)
+    *   Debug: `False`
+    *   CORS: 프론트엔드 도메인만 허용
+
 
 ## 7. 제한사항 및 예외 처리
 *   **API Error Handling**: `HTTPException`을 사용하여 명확한 상태 코드(400, 401, 404, 500) 반환

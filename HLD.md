@@ -59,6 +59,15 @@ graph TD
 *   **Backend**: Python 3.x, FastAPI
 *   **ORM**: SQLAlchemy
 
+### 4.2 기술 선정 근거 (Trade-off Analysis)
+*   **FastAPI vs Django**:
+    *   **선정**: FastAPI
+    *   **이유**: AI 서비스와의 비동기 통신 효율성, 높은 성능, 자동화된 API 문서(Swagger) 제공. Django는 기능이 강력하지만 본 프로젝트에는 과도하게 무겁고 동기 방식이 기본이라 제외.
+*   **RDBMS (MariaDB) vs NoSQL**:
+    *   **선정**: RDBMS
+    *   **이유**: 사용자-오답노트-문제 간의 관계(Relation)가 명확하고, 데이터 무결성이 중요함. NoSQL의 유연성보다는 정형화된 데이터 구조가 적합.
+
+
 ### 4.2 데이터베이스
 *   **Main DB**: SQLite (Development), MariaDB (Production)
 
@@ -67,17 +76,35 @@ graph TD
     *   **Generation**: Llama 3.1 8b (via OpenAI-compatible API)
     *   **Embedding**: multilingual-e5-small (Local Execution)
 
+### 4.4 외부 인터페이스 및 장애 대응 (External Interfaces)
+*   **AI Service Communication**:
+    *   **Protocol**: HTTPS (REST API)
+    *   **Timeout**: 10초 (Generation), 5초 (Embedding)
+*   **Fallback Policy**:
+    *   **API 장애 시**: 외부 AI API 호출 실패 시, 사용자에게 "AI 서비스 일시 장애" 메시지를 표시하거나, 로컬에 캐싱된 문제/유사도 알고리즘(SequenceMatcher)으로 대체 시도.
+    *   **DB 장애 시**: 읽기 전용 모드로 전환하거나 점검 중 페이지 표시.
+
+
 ## 5. 데이터 흐름 (Data Flow)
 
 ### 5.1 주요 기능 단위 데이터 흐름 (정답 검증)
-1.  **사용자**: 답안 입력 및 제출
-2.  **Frontend**: API 서버로 검증 요청 (`POST /api/verify`)
-3.  **Backend**:
-    *   DB에서 해당 문제의 정답 및 문맥 정보 조회
-    *   AI 서비스에 사용자 답안과 정답의 유사도 분석 요청
-    *   유사도 점수 및 정답 여부 판별
-    *   결과를 DB(`Attempt` 테이블)에 기록
-4.  **Frontend**: 결과 수신 및 사용자에게 피드백(성공/실패, 유사도) 표시
+### 5.1 주요 기능 단위 데이터 흐름 (Data Flow Diagram)
+```mermaid
+flowchart TD
+    User([User]) -->|1. Submit Answer| FE[Frontend]
+    FE -->|2. POST /api/verify| BE[Backend API]
+    
+    subgraph Backend Services
+        BE -->|3. Get Correct Meaning| DB[(Database)]
+        BE -->|4. Request Similarity| AI[AI Engine / Local Model]
+        AI -- Similarity Score --> BE
+        BE -->|5. Save Attempt Log| DB
+    end
+    
+    BE -- 6. Result (Correct/Fail) --> FE
+    FE -- 7. Display Feedback --> User
+```
+
 
 ## 6. 주요 모듈 설명 (Key Modules)
 
