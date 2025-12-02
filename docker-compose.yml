@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.6
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: context_hunter
+      MYSQL_USER: hunter_user
+      MYSQL_PASSWORD: your_secure_password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: mysql+pymysql://hunter_user:your_secure_password@db/context_hunter
+      AI_API_KEY: ${AI_API_KEY}
+      AI_BASE_URL: ${AI_BASE_URL}
+      AI_MODEL_NAME: ${AI_MODEL_NAME:-llama-3.1-8b-instant}
+    networks:
+      - app-network
+
+  frontend:
+    build: ./app
+    restart: always
+    ports:
+      - "65039:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+
+networks:
+  app-network:
+    driver: bridge

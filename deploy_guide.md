@@ -81,3 +81,39 @@ const API_BASE_URL = 'http://YOUR_SERVER_IP:8001/api';
 ```
 
 그 후 프론트엔드를 빌드하여 Nginx 등으로 배포합니다.
+## 5. Docker로 배포하기 (Recommended)
+
+학교 서버 등 프로덕션 환경에서는 Docker를 사용하는 것이 가장 간편하고 안정적입니다.
+
+### 5.1 사전 준비
+서버에 **Docker**와 **Docker Compose**가 설치되어 있어야 합니다.
+
+### 5.2 환경 변수 설정
+프로젝트 루트에 `.env` 파일을 생성하고 AI API 키를 입력합니다.
+
+```bash
+# .env
+AI_API_KEY=your_api_key_here
+AI_BASE_URL=https://api.groq.com/openai/v1
+AI_MODEL_NAME=llama-3.1-8b-instant
+```
+
+### 5.3 실행
+다음 명령어로 모든 서비스(DB, Backend, Frontend)를 한 번에 실행합니다.
+
+```bash
+docker-compose up -d --build
+```
+
+*   `--build`: 이미지를 새로 빌드합니다 (코드 변경 시 필수).
+*   `-d`: 백그라운드에서 실행합니다.
+
+### 5.4 접속 확인
+*   웹사이트: `http://YOUR_SERVER_IP:65039`
+*   API: `http://YOUR_SERVER_IP:65039/api` (내부적으로 프록시됨)
+*   DB 데이터는 `docker-compose.yml`이 있는 폴더에 영구 저장됩니다.
+
+### 5.5 종료
+```bash
+docker-compose down
+```

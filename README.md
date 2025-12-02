@@ -59,7 +59,8 @@ npm install
 npm run dev
 ```
 
-웹사이트 주소: `http://localhost:5173`
+웹사이트 주소: `http://localhost:65039` (Docker 배포 시)
+
 
 ## 배포 (Deployment)
 

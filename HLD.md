@@ -34,7 +34,7 @@
 ```mermaid
 graph TD
     User["User (Browser)"]
-    LB["Load Balancer / Reverse Proxy"]
+    LB["Nginx (Reverse Proxy)"]
     FE["Frontend (React SPA)"]
     BE["Backend API (FastAPI)"]
     DB["(Database)"]
@@ -139,8 +139,8 @@ flowchart TD
 ## 8. 성능/보안/확장성 고려
 
 ### 8.1 확장성 전략
-*   **Stateless Backend**: REST API 구조로 서버 수평 확장(Scale-out) 용이
-*   **Frontend 분리**: CDN 등을 통한 정적 리소스 배포 최적화 가능
+*   **Stateless Backend**: REST API 구조로 서버 수평 확장(Scale-out) 용이 (Docker Replica 활용)
+*   **Frontend 분리**: Nginx를 통한 정적 리소스 서빙 및 캐싱 최적화
 
 ### 8.2 보안 모델
 *   **인증**: JWT(JSON Web Token) 기반의 Stateless 인증

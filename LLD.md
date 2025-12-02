@@ -217,8 +217,10 @@ sequenceDiagram
     *   DB: SQLite (`context_hunter.db`)
     *   Debug: `True` (상세 에러 메시지 노출)
     *   CORS: `*` (모든 출처 허용)
-*   **Production**:
-    *   DB: MariaDB (AWS RDS or Local Server)
+*   **Production (Docker)**:
+    *   **Orchestration**: Docker Compose
+    *   **Reverse Proxy**: Nginx (Port 65039 -> 80)
+    *   DB: MariaDB (Containerized)
     *   Debug: `False`
     *   CORS: 프론트엔드 도메인만 허용
 
