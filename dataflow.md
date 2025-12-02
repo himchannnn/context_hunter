@@ -17,3 +17,27 @@ flowchart TD
 
     User --> FE_Request --> BE_Start --> BE_AI --> BE_Result --> BE_Log --> FE_Response
 ```
+
+
+```mermaid
+sequenceDiagram
+    participant U as 사용자
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+    participant AI as AI 서비스
+
+    U->>F: 답안 입력 및 제출
+    F->>B: 검증 요청 (POST /api/verify)
+
+    B->>DB: 문제 정답 및 문맥 조회
+    DB-->>B: 정답/문맥 데이터 반환
+
+    B->>AI: 사용자 답안 vs 정답<br>유사도 분석 요청
+    AI-->>B: 유사도 점수/일치 여부 반환
+
+    B->>DB: Attempt 기록 저장
+
+    B-->>F: 검증 결과 반환
+    F-->>U: 결과 표시 (성공/실패, 유사도)
+```
