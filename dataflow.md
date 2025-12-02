@@ -1,21 +1,23 @@
 ```mermaid
 flowchart TD
 
-    User["사용자<br>답안 입력 및 제출"]
+    classDef box fill:#163E64,stroke:#0d253c,stroke-width:1px,color:#ffffff
 
-    FE_Request["Frontend<br>검증 요청<br>(POST /api/verify)"]
+    User["사용자<br>답안 입력 및 제출"]:::box
 
-    BE_Start["Backend<br>DB에서 문제의 정답 및 문맥 정보 조회"]
+    FE["Frontend<br>검증 요청 전송<br>(POST /api/verify)"]:::box
 
-    BE_AI["AI 서비스<br>사용자 답안-정답 유사도 분석 요청"]
+    BE_Query["Backend<br>정답 & 문맥 조회<br>(DB 요청)"]:::box
 
-    BE_Result["Backend<br>유사도 점수 산출 및 정답 여부 판별"]
+    AI["AI 서비스<br>유사도 분석 수행"]:::box
 
-    BE_Log["Backend<br>결과 DB 기록<br>(Attempt 테이블)"]
+    BE_Judge["Backend<br>정답 여부 판별<br>유사도 점수 생성"]:::box
 
-    FE_Response["Frontend<br>결과 수신 및 피드백 표시<br>(성공/실패, 유사도)"]
+    BE_Save["Backend<br>Attempt 테이블 기록"]:::box
 
-    User --> FE_Request --> BE_Start --> BE_AI --> BE_Result --> BE_Log --> FE_Response
+    FE_Return["Frontend<br>결과 표시<br>(성공/실패, 유사도)"]:::box
+
+    User --> FE --> BE_Query --> AI --> BE_Judge --> BE_Save --> FE_Return
 ```
 
 
