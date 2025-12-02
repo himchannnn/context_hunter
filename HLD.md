@@ -73,15 +73,14 @@ graph TD
 
 ### 4.3 외부 서비스
 *   **AI Engine**: 
-    *   **Generation**: Llama 3.1 8b (via OpenAI-compatible API)
-    *   **Embedding**: multilingual-e5-small (Local Execution)
+    *   **Generation & Verification**: Llama 3.1 8b (via OpenAI-compatible API)
 
 ### 4.4 외부 인터페이스 및 장애 대응 (External Interfaces)
 *   **AI Service Communication**:
     *   **Protocol**: HTTPS (REST API)
-    *   **Timeout**: 10초 (Generation), 5초 (Embedding)
+    *   **Timeout**: 10초 (Generation), 5초 (Verification)
 *   **Fallback Policy**:
-    *   **API 장애 시**: 외부 AI API 호출 실패 시, 사용자에게 "AI 서비스 일시 장애" 메시지를 표시하거나, 로컬에 캐싱된 문제/유사도 알고리즘(SequenceMatcher)으로 대체 시도.
+    *   **API 장애 시**: 외부 AI API 호출 실패 시, 사용자에게 "AI 서비스 일시 장애" 메시지를 표시.
     *   **DB 장애 시**: 읽기 전용 모드로 전환하거나 점검 중 페이지 표시.
 
 
@@ -96,7 +95,7 @@ flowchart TD
     
     subgraph Backend Services
         BE -->|3. Get Correct Meaning| DB[(Database)]
-        BE -->|4. Request Similarity| AI[AI Engine / Local Model]
+        BE -->|4. Request Verification| AI[AI Engine (Llama 3.1)]
         AI -- Similarity Score --> BE
         BE -->|5. Save Attempt Log| DB
     end
