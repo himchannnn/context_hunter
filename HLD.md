@@ -90,12 +90,12 @@ graph TD
 ### 5.1 주요 기능 단위 데이터 흐름 (Data Flow Diagram)
 ```mermaid
 flowchart TD
-    User([User]) -->|1. Submit Answer| FE[Frontend]
-    FE -->|2. POST /api/verify| BE[Backend API]
+    User([User]) -->|1. Submit Answer| FE["Frontend"]
+    FE -->|2. POST /api/verify| BE["Backend API"]
     
     subgraph Backend Services
-        BE -->|3. Get Correct Meaning| DB[(Database)]
-        BE -->|4. Request Verification| AI[AI Engine (Llama 3-1)]
+        BE -->|3. Get Correct Meaning| DB["(Database)"]
+        BE -->|4. Request Verification| AI["AI Engine (Llama 3-1)"]
         AI -- Similarity Score --> BE
         BE -->|5. Save Attempt Log| DB
     end
