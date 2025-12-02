@@ -1,17 +1,55 @@
 ```mermaid
-flowchart TD
+erDiagram
 
-    classDef step fill:#163E64,stroke:#0d253c,stroke-width:1px,color:#ffffff
+    USER {
+        int id PK
+        string username
+        string hashed_password
+        boolean is_guest
+        datetime created_at
+    }
 
-    Input["Input<br>questionId, userAnswer"]:::step
-    Query["DB 조회<br>questionId → correct_meaning 획득"]:::step
-    Preprocess["userAnswer 전처리<br>(trim, lowercase)"]:::step
-    AI["AI API 호출<br>multilingual-e5-small<br>의미적 유사도 분석"]:::step
-    Threshold["유사도 Threshold 체크<br>85점 이상 → isCorrect = True"]:::step
-    Log["Attempt 테이블 로그 저장"]:::step
-    Output["Output<br>isCorrect, similarity, feedback"]:::step
+    QUESTION {
+        string id PK
+        text encoded_text
+        text original_text
+        text correct_meaning
+        int difficulty
+        int correct_count
+        int total_attempts
+        float success_rate
+    }
 
-    Input --> Query --> Preprocess --> AI --> Threshold --> Log --> Output
+    WRONGANSWERNOTE {
+        int id PK
+        int user_id FK
+        string question_id FK
+        text user_answer
+        datetime created_at
+    }
+
+    ATTEMPT {
+        int id PK
+        string question_id FK
+        text user_answer
+        float similarity_score
+        boolean is_correct
+        datetime timestamp
+    }
+
+    GUESTBOOK {
+        int id PK
+        string nickname
+        int score
+        int max_streak
+        int difficulty
+        datetime timestamp
+    }
+
+    %% 관계 정의 (1:N)
+    USER ||--o{ WRONGANSWERNOTE : "has"
+    QUESTION ||--o{ WRONGANSWERNOTE : "referenced_by"
+    QUESTION ||--o{ ATTEMPT : "has_logs"
 ```
 
 ```mermaid
