@@ -1,4 +1,4 @@
-mermaid```
+```mermaid
 flowchart TD
 
     User["사용자<br>답안 입력 및 제출"]
