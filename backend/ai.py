@@ -1,9 +1,8 @@
 import os
 import json
 from typing import Dict, Any, Optional
-import numpy as np
+from typing import Dict, Any, Optional
 from openai import OpenAI
-from sentence_transformers import SentenceTransformer, util
 
 # 환경 변수 로드 (main.py에서 load_dotenv가 호출되므로 여기서는 os.getenv 사용 가능)
 # 하지만 안전을 위해 여기서도 호출하거나, main.py가 먼저 실행됨을 가정합니다.
@@ -70,72 +69,62 @@ class AIClient:
             print(f"Error generating question: {e}")
             return {"error": str(e)}
 
-class EmbeddingModel:
-    _instance = None
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def __init__(self):
-        # multilingual-e5-small 모델 로드
-        print("Loading embedding model (intfloat/multilingual-e5-small)...")
-        try:
-            self.model = SentenceTransformer('intfloat/multilingual-e5-small')
-            print("Embedding model loaded successfully.")
-        except Exception as e:
-            print(f"Failed to load embedding model: {e}")
-            self.model = None
-
-    def check_similarity(self, user_answer: str, correct_answer: str) -> Dict[str, Any]:
+    def check_similarity(self, user_answer: str, correct_meaning: str) -> Dict[str, Any]:
         """
-        multilingual-e5-small을 사용하여 의미적 유사도를 계산합니다.
+        Llama 3.1 8b를 사용하여 의미적 유사도를 판별합니다.
         """
-        if not self.model:
+        if not self.client:
             return {
                 "similarity_score": 0,
                 "is_correct": False,
-                "feedback": "AI 모델 로드 실패로 인해 판별할 수 없습니다."
+                "feedback": "AI 클라이언트 초기화 실패"
             }
 
-        # 임베딩 생성
-        # e5 모델은 query: 와 passage: 접두사가 필요할 수 있으나, 
-        # 대칭적인 문장 비교(STS)의 경우 접두사 없이 사용하거나 둘 다 query로 사용할 수 있습니다.
-        # 여기서는 간단하게 접두사 없이 사용하거나, 필요시 문서를 참고하여 추가합니다.
-        # e5-small은 "query: " 접두사를 추천하는 경우가 많습니다.
-        embeddings = self.model.encode([f"query: {user_answer}", f"query: {correct_answer}"])
+        prompt = f"""
+        Compare the meaning of the two sentences below.
         
-        # 코사인 유사도 계산
-        score = util.cos_sim(embeddings[0], embeddings[1]).item()
+        1. Correct Meaning: "{correct_meaning}"
+        2. User Answer: "{user_answer}"
         
-        # 점수 스케일링 (0~1 -> 0~100)
-        similarity_score = int(score * 100)
+        Are they semantically similar in the given context?
+        Even if the words are different, if the core meaning is the same, it is Correct.
+        If the meaning is opposite or irrelevant, it is Incorrect.
         
-        # 정답 기준 설정 (예: 85점 이상)
-        is_correct = similarity_score >= 85
-        
-        feedback = ""
-        if is_correct:
-            feedback = "정확합니다! 문맥을 완벽하게 파악하셨네요."
-        elif similarity_score >= 60:
-            feedback = "비슷하지만 조금 더 정확한 표현이 필요합니다."
-        else:
-            feedback = "의미가 다소 다릅니다. 다시 시도해보세요."
+        Return JSON only:
+        {{
+            "is_correct": boolean,
+            "similarity_score": integer (0-100),
+            "feedback": "Short feedback in Korean (1 sentence)"
+        }}
+        """
 
-        return {
-            "similarity_score": similarity_score,
-            "is_correct": is_correct,
-            "feedback": feedback
-        }
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are a strict evaluator. Output JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,
+                response_format={"type": "json_object"}
+            )
+            
+            content = response.choices[0].message.content
+            return json.loads(content)
+        except Exception as e:
+            print(f"Error checking similarity: {e}")
+            return {
+                "similarity_score": 0,
+                "is_correct": False,
+                "feedback": f"AI 판별 오류: {str(e)}"
+            }
 
 # 싱글톤 인스턴스 생성
-embedding_model = EmbeddingModel.get_instance()
 ai_client = AIClient()
 
 def generate_question(context: str, style: str) -> Dict[str, Any]:
     return ai_client.generate_question(context, style)
 
 def check_similarity(user_answer: str, correct_answer: str) -> Dict[str, Any]:
-    return embedding_model.check_similarity(user_answer, correct_answer)
+    return ai_client.check_similarity(user_answer, correct_answer)
+

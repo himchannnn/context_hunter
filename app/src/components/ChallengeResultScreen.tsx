@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { GameResult, Difficulty } from '../types';
 import { saveGuestbook, fetchRankings, type RankingEntry, createNote } from '../lib/api';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -175,8 +175,8 @@ export default function ChallengeResultScreen({
                       onClick={() => handleAddToNote(result.question.id, result.userAnswer)}
                       disabled={addedNotes.has(result.question.id)}
                       className={`mt-2 w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring ${addedNotes.has(result.question.id)
-                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                          : 'bg-primary hover:bg-primary/90'
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                        : 'bg-primary hover:bg-primary/90'
                         }`}
                     >
                       {addedNotes.has(result.question.id) ? '추가됨' : '오답노트에 추가'}

@@ -133,17 +133,16 @@ sequenceDiagram
     
     BE->>BE: Preprocess Answer (trim, lower)
     
-    BE->>AI: Request Similarity Analysis
+    BE->>AI: Request Verification (Llama 3.1)
     activate AI
     alt AI Service Error / Timeout
         AI-->>BE: Error
-        BE->>BE: Fallback Logic (SequenceMatcher)
+        BE-->>FE: 503 Service Unavailable
     else Success
-        AI-->>BE: Similarity Score (0 - 100)
+        AI-->>BE: JSON {is_correct, score, feedback}
     end
     deactivate AI
     
-    BE->>BE: Check Threshold (>= 85)
     BE->>DB: Save Attempt Log
     
     BE-->>FE: Response (isCorrect, similarity, feedback)
@@ -178,8 +177,8 @@ sequenceDiagram
 2.  **Process**:
     *   DB에서 `questionId`로 문제 조회 (`correct_meaning` 획득)
     *   `userAnswer` 전처리 (trim, lowercase)
-    *   **AI API 호출**: `userAnswer`와 `correct_meaning` 간의 의미적 유사도 분석 요청 (multilingual-e5-small)
-    *   **Threshold Check**: 유사도 85점 이상이면 `isCorrect = True`
+    *   **AI API 호출**: Llama 3.1에게 두 문장의 의미적 유사성 판별 요청 (Prompt Engineering)
+    *   **Response Parsing**: AI가 반환한 JSON (`is_correct`, `score`, `feedback`) 파싱
     *   `Attempt` 테이블에 로그 저장
 3.  **Output**: `isCorrect`, `similarity`, `feedback`
 
@@ -228,4 +227,4 @@ sequenceDiagram
 ## 7. 제한사항 및 예외 처리
 *   **API Error Handling**: `HTTPException`을 사용하여 명확한 상태 코드(400, 401, 404, 500) 반환
 *   **DB Connection**: `SessionLocal`을 사용하여 요청별 세션 생성 및 종료 (`yield` 패턴)
-*   **AI API Failure**: 외부 API 호출 실패 시 기본 유사도 알고리즘(SequenceMatcher)으로 Fallback 처리 고려 (현재는 에러 반환)
+*   **AI API Failure**: 외부 API 호출 실패 시 503 에러 반환 (로컬 Fallback 없음)
