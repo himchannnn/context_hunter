@@ -1,78 +1,23 @@
 ```mermaid
-erDiagram
+flowchart LR
 
-    USER {
-        int id PK
-        string username
-        string hashed_password
-        boolean is_guest
-        datetime created_at
-    }
+    %% 노드 정의
+    User["사용자<br>답안 입력 및 제출"]
 
-    QUESTION {
-        string id PK
-        text encoded_text
-        text original_text
-        text correct_meaning
-        int difficulty
-        int correct_count
-        int total_attempts
-        float success_rate
-    }
+    FE_Request["Frontend<br>API 서버로 검증 요청<br>(POST /api/verify)"]
 
-    WRONGANSWERNOTE {
-        int id PK
-        int user_id FK
-        string question_id FK
-        text user_answer
-        datetime created_at
-    }
+    BE_Query["Backend<br>DB에서 해당 문제의 정답 및<br>문맥 정보 조회"]
 
-    ATTEMPT {
-        int id PK
-        string question_id FK
-        text user_answer
-        float similarity_score
-        boolean is_correct
-        datetime timestamp
-    }
+    BE_AI["Backend → AI 서비스<br>사용자 답안과 정답의<br>유사도 분석 요청"]
 
-    GUESTBOOK {
-        int id PK
-        string nickname
-        int score
-        int max_streak
-        int difficulty
-        datetime timestamp
-    }
+    BE_Judge["Backend<br>유사도 점수 및<br>정답 여부 판별"]
 
-    %% 관계 정의 (1:N)
-    USER ||--o{ WRONGANSWERNOTE : "has"
-    QUESTION ||--o{ WRONGANSWERNOTE : "referenced_by"
-    QUESTION ||--o{ ATTEMPT : "has_logs"
-```
+    BE_Log["Backend<br>결과를 DB(Attempt 테이블)에 기록"]
 
-```mermaid
-sequenceDiagram
-    participant U as 사용자
-    participant F as Frontend
-    participant B as Backend
-    participant DB as Database
-    participant AI as AI 서비스
+    FE_Response["Frontend<br>결과 수신 및 사용자에게 피드백 표시<br>(성공/실패, 유사도)"]
 
-    U->>F: 답안 입력 및 제출
-    F->>B: 검증 요청 (POST /api/verify)
-
-    B->>DB: 문제 정답 및 문맥 조회
-    DB-->>B: 정답/문맥 데이터 반환
-
-    B->>AI: 사용자 답안 vs 정답<br>유사도 분석 요청
-    AI-->>B: 유사도 점수/일치 여부 반환
-
-    B->>DB: Attempt 기록 저장
-
-    B-->>F: 검증 결과 반환
-    F-->>U: 결과 표시 (성공/실패, 유사도)
+    %% 흐름
+    User --> FE_Request --> BE_Query --> BE_AI --> BE_Judge --> BE_Log --> FE_Response
 ```
 
 ```mermaid
