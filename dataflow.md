@@ -1,3 +1,4 @@
+mermaid```
 flowchart TD
 
     User["사용자<br>답안 입력 및 제출"]
@@ -15,3 +16,4 @@ flowchart TD
     FE_Response["Frontend<br>결과 수신 및 피드백 표시<br>(성공/실패, 유사도)"]
 
     User --> FE_Request --> BE_Start --> BE_AI --> BE_Result --> BE_Log --> FE_Response
+```
