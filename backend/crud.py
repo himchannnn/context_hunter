@@ -31,11 +31,7 @@ def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
         for q in questions
     ]
 
-# 문자열 유사도 계산 함수
-def calculate_similarity(str1: str, str2: str) -> float:
-    # difflib을 사용한 기본적인 유사도 검사
-    # 실제 서비스에서는 AI API (OpenAI 등)를 사용하여 의미적 유사도를 판단해야 합니다.
-    return difflib.SequenceMatcher(None, str1, str2).ratio() * 100
+from .ai import check_similarity
 
 # 정답 확인 및 결과 저장 함수
 def verify_answer(db: Session, question_id: str, user_answer: str):
@@ -43,15 +39,13 @@ def verify_answer(db: Session, question_id: str, user_answer: str):
     if not question:
         return None
     
-    # 문자열 정규화 (공백 제거, 소문자 변환)
-    normalized_user = user_answer.strip().lower().replace(" ", "")
-    normalized_correct = question.correct_meaning.strip().lower().replace(" ", "")
+    # AI를 이용한 유사도 판별 호출
+    # check_similarity 함수 내부에서 모델 로드 실패 시 적절한 에러 메시지를 반환하도록 처리되어 있음
+    ai_result = check_similarity(user_answer, question.correct_meaning)
     
-    # 유사도 계산
-    similarity = calculate_similarity(normalized_user, normalized_correct)
-    
-    # 정답 판별 기준 (예: 80% 이상 유사하면 정답)
-    is_correct = similarity >= 80
+    similarity = ai_result['similarity_score']
+    is_correct = ai_result['is_correct']
+    feedback = ai_result['feedback']
     
     # 통계 업데이트
     question.total_attempts += 1
@@ -72,7 +66,7 @@ def verify_answer(db: Session, question_id: str, user_answer: str):
         isCorrect=is_correct,
         similarity=round(similarity, 1),
         correctAnswer=question.correct_meaning if not is_correct else None,
-        feedback="정답입니다!" if is_correct else "아쉽네요."
+        feedback=feedback
     )
 
 # 방명록(랭킹) 저장 함수 (전체 난이도 통합 최고 기록만 유지)

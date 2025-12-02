@@ -10,7 +10,7 @@
 *   **전체 기능 요약**:
     *   **사용자 관리**: 회원가입, 로그인(JWT), 게스트 모드
     *   **게임 플레이**: 일일 모드(10문제), 도전 모드(무한/3Life)
-    *   **AI 분석**: 답안 유사도 분석 및 정답 판별
+    *   **AI 분석**: 답안 유사도 분석 (multilingual-e5-small) 및 문제 생성 (Llama 3.1 8b)
     *   **학습 보조**: 오답 노트, 랭킹 시스템, 소셜 공유
 *   **사용자 유형 및 시나리오**:
     *   **일반 사용자**: 로그인 후 기록 저장, 랭킹 경쟁, 오답 복습
@@ -48,13 +48,15 @@ graph TD
     *   Backend: Python 3.x, FastAPI
 *   **데이터베이스**: SQLite (개발), MariaDB (운영)
 *   **메시징 시스템**: (현재 미사용, 추후 Redis 도입 고려)
-*   **외부 서비스**: OpenAI API / Google Gemini API (문맥 분석)
+*   **AI Engine**: 
+    *   **Generation**: Llama 3.1 8b (via OpenAI-compatible API)
+    *   **Embedding**: multilingual-e5-small (Local Execution)
 
 ### 5. 데이터 흐름 (Data Flow)
 *   **사용자 요청 → 처리 → 응답 흐름 (정답 검증 예시)**:
     1.  **User**: 답안 입력 및 제출
     2.  **Frontend**: `POST /api/verify` 요청 전송
-    3.  **Backend**: DB에서 정답 조회 -> AI API로 유사도 분석 요청 -> 결과 판별 -> DB 저장
+    3.  **Backend**: DB에서 정답 조회 -> 로컬 임베딩 모델로 유사도 분석 -> 결과 판별 -> DB 저장
     4.  **Frontend**: 결과(정답/오답, 유사도) 수신 및 UI 표시
 
 ### 6. 주요 모듈 설명 (Key Modules)
@@ -176,20 +178,17 @@ sequenceDiagram
 *   **정답 유사도 분석 (Pseudocode)**:
     ```python
     def verify_answer(user_answer, correct_meaning):
-        cleaned_answer = user_answer.strip().lower()
-        cleaned_correct = correct_meaning.strip().lower()
-        
-        # 1. Exact Match
-        if cleaned_answer == cleaned_correct:
-            return 1.0, True
-            
-        # 2. AI Analysis (Fallback to SequenceMatcher if AI fails)
+        # 1. AI Analysis (multilingual-e5-small)
         try:
-            score = call_ai_api(cleaned_answer, cleaned_correct)
+            # backend/ai.py의 check_similarity 호출
+            result = check_similarity(user_answer, correct_meaning)
+            score = result['similarity_score']
+            is_correct = result['is_correct']
         except:
-            score = difflib.SequenceMatcher(None, cleaned_answer, cleaned_correct).ratio()
+            # Fallback (if model fails to load)
+            score = 0
+            is_correct = False
             
-        is_correct = score >= 0.8
         return score, is_correct
     ```
 
@@ -204,7 +203,9 @@ sequenceDiagram
 *   **.env File**:
     *   `SECRET_KEY`: JWT 서명 키 (필수)
     *   `DATABASE_URL`: DB 연결 URL (예: `sqlite:///./app.db`)
-    *   `OPENAI_API_KEY`: AI API 키
+    *   `OPENAI_API_KEY`: AI API 키 (Llama 3.1 사용 시)
+    *   `AI_BASE_URL`: AI API Base URL (예: Groq, Ollama 등)
+    *   `AI_MODEL_NAME`: 사용할 모델명 (Default: llama-3.1-8b-instant)
 *   **Port**: Backend 8000 (Default), Frontend 5173 (Vite Default)
 
 ### 9. 보안 세부 구현 (Security Detail)

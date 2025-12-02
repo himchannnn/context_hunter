@@ -13,7 +13,7 @@
 *   **게임 모드**:
     *   **일일 모드**: 매일 제공되는 10문제 풀이
     *   **도전 모드**: 무한 문제 풀이 (3회 오답 시 종료)
-*   **AI 분석**: 사용자 답안의 문맥 유사도 분석 및 정답 판별 (OpenAI/Gemini API 활용)
+*   **AI 분석**: 사용자 답안의 문맥 유사도 분석 및 정답 판별 (Llama 3.1 8b & multilingual-e5-small 활용)
 *   **학습 보조**: 오답 노트 저장 및 복습 기능
 *   **랭킹 시스템**: 도전 모드 점수 기반 글로벌 랭킹 및 명예의 전당
 *   **소셜 공유**: 게임 결과 공유 기능
@@ -63,7 +63,9 @@ graph TD
 *   **Main DB**: SQLite (Development), MariaDB (Production)
 
 ### 4.3 외부 서비스
-*   **AI Engine**: OpenAI API 또는 Google Gemini API (문맥 유사도 분석용)
+*   **AI Engine**: 
+    *   **Generation**: Llama 3.1 8b (via OpenAI-compatible API)
+    *   **Embedding**: multilingual-e5-small (Local Execution)
 
 ## 5. 데이터 흐름 (Data Flow)
 
@@ -123,6 +125,8 @@ graph TD
 *   **응답 속도**: AI 분석을 제외한 일반 API 응답 200ms 이내 목표
 
 ## 9. 제한사항 및 가정
-*   **AI 비용**: 외부 AI API 사용에 따른 비용 발생 가능성 고려 (캐싱 도입 검토 필요)
-*   **네트워크**: AI 분석을 위해 인터넷 연결 필수
+*   **AI 비용/자원**: 
+    *   Llama 3.1: API 호출 비용 또는 호스팅 비용 발생
+    *   Embedding: 로컬 서버 메모리(약 1GB) 및 CPU 자원 소모
+*   **네트워크**: 문제 생성 시 인터넷 연결 필수 (로컬 임베딩은 오프라인 가능)
 *   **브라우저**: 최신 모던 브라우저(ES6+ 지원) 환경 가정
