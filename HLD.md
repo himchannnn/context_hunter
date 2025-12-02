@@ -95,7 +95,7 @@ flowchart TD
     
     subgraph Backend Services
         BE -->|3. Get Correct Meaning| DB[(Database)]
-        BE -->|4. Request Verification| AI[AI Engine (Llama 3.1)]
+        BE -->|4. Request Verification| AI[AI Engine (Llama 3-1)]
         AI -- Similarity Score --> BE
         BE -->|5. Save Attempt Log| DB
     end
