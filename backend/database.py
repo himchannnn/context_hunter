@@ -22,7 +22,7 @@ with open("debug.log", "a", encoding="utf-8") as f:
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
     pool_pre_ping=True, # 연결 유효성 확인
-    # connect_args는 SQLite 전용 옵션입니다. MariaDB 사용 시 제거하거나 조건부로 처리해야 합니다.
+    # connect_args는 SQLite 전용 옵션입니다. MariaDB 사용 시에는 빈 딕셔너리여야 합니다.
     connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
 )
 

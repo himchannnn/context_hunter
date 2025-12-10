@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 1. Ollama Service (AI Model)
+  # Runs in a container with GPU access.
+  # "OLLAMA_KEEP_ALIVE" is set to release VRAM quickly to prevent monopoly.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    environment:
+      - OLLAMA_KEEP_ALIVE=0s # Unload model immediately after response
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app-network
+
+  # 2. Backend Service (FastAPI)
+  # Connects to Ollama (internal network) and Host MariaDB (via host.docker.internal).
+  # Not exposed externally; used via Frontend proxy.
+  backend:
+    build: ./backend
+    restart: always
+    depends_on:
+      - ollama
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Access Host IP
+    environment:
+      # Database: Points to the Host's MariaDB using Team 39 credentials.
+      DATABASE_URL: mysql+pymysql://dbid253:dbpass253@host.docker.internal:3306/db25339
+
+      # AI Config
+      AI_API_KEY: ollama
+      AI_BASE_URL: http://ollama:11434/v1
+      AI_MODEL_NAME: llama3.1
+    networks:
+      - app-network
+
+  # 3. Frontend Service (React + Nginx)
+  # Acts as Reverse Proxy: 
+  #   - Port 65039 -> NginxPort 80
+  #   - /api/ -> BackendPort 8000
+  frontend:
+    build: ./app
+    restart: always
+    ports:
+      - "65039:80" # Team 39 Assigned Port (Frontend Only)
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  ollama_data:
+
+
+networks:
+  app-network:
+    driver: bridge

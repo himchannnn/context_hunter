@@ -159,6 +159,19 @@ def create_note(note: schemas.WrongAnswerNoteCreate, current_user: models.User =
 def read_notes(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     return crud.get_user_notes(db, current_user.id)
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# ... (Existing imports and API endpoints remain unchanged) ...
+
+# @app.get("/")
+# def read_root():
+#     return {"message": "Context Hunter Backend is running!"}
+
+# @app.get("/")
+# def read_root():
+#     return {"message": "Context Hunter Backend is running!"}
+
 @app.get("/")
 def read_root():
     return {"message": "Context Hunter Backend is running!"}

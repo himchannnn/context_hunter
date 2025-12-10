@@ -1,6 +1,8 @@
 import type { Question, VerifyResponse } from '../types';
 
-export const API_BASE_URL = 'http://localhost:8001/api';
+// In production (behind Nginx), we use relative path to let Nginx proxy to backend.
+// In local dev, Vite proxy (vite.config.ts) should handle this, or we can use env var.
+export const API_BASE_URL = '/api';
 
 // 난이도별 문제 목록 가져오기
 export const fetchQuestions = async (difficulty: number): Promise<Question[]> => {
