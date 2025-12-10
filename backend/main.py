@@ -119,15 +119,11 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
 @app.get("/api/questions", response_model=schemas.QuestionsResponse)
 def read_questions(difficulty: int = 1, db: Session = Depends(get_db)):
     try:
-        with open("debug.log", "a", encoding="utf-8") as f:
-            f.write(f"DEBUG: read_questions called with difficulty {difficulty}\n")
+        # print(f"DEBUG: read_questions called with difficulty {difficulty}") # Stdout logs are captured by Podman
         questions = crud.get_questions_by_difficulty(db, difficulty)
         return {"questions": questions}
     except Exception as e:
-        with open("debug.log", "a", encoding="utf-8") as f:
-            f.write(f"ERROR in read_questions: {str(e)}\n")
-            import traceback
-            f.write(traceback.format_exc())
+        print(f"ERROR in read_questions: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # 정답 확인 엔드포인트

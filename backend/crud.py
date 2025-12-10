@@ -1,23 +1,68 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 import models, schemas
+import models, schemas
 import difflib
+import logging
+from ai import generate_question, check_similarity
+
+# 로거 설정
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# 초기 시드 데이터 (DB가 비었을 때 AI에게 던져줄 주제들)
+SEED_CONTEXTS = [
+    "The early bird catches the worm.",
+    "A penny saved is a penny earned.",
+    "Actions speak louder than words.",
+    "Knowledge is power.",
+    "Time is money.",
+    "Honesty is the best policy.",
+    "Practice makes perfect.",
+    "Where there is a will, there is a way.",
+    "Look before you leap.",
+    "Better late than never."
+]
+import random
 
 # 난이도별 문제 조회 함수
 def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
-    # 실제 앱에서는 랜덤하게 가져오는 것이 좋습니다.
-    with open("debug.log", "a", encoding="utf-8") as f:
-        f.write(f"DEBUG: Fetching questions for difficulty {difficulty} (type: {type(difficulty)})\n")
-    
+    # 1. DB에서 문제 조회
     questions = db.query(models.Question).filter(models.Question.difficulty == difficulty).limit(limit).all()
     
-    with open("debug.log", "a", encoding="utf-8") as f:
-        f.write(f"DEBUG: Found {len(questions)} questions\n")
-        if questions:
+    logger.info(f"Fetched {len(questions)} questions from DB for difficulty {difficulty}")
+
+    # 2. 문제가 부족하면 AI로 생성 (자동 채우기)
+    if len(questions) < limit:
+        needed = limit - len(questions)
+        logger.info(f"Not enough questions. Generating {needed} new questions using AI...")
+        
+        for _ in range(needed):
             try:
-                f.write(f"DEBUG: First question success_rate: {questions[0].success_rate}\n")
+                # 시드 문맥 중 하나 랜덤 선택
+                context = random.choice(SEED_CONTEXTS)
+                # AI 호출 (암호화된 문장 생성)
+                ai_data = generate_question(context, style="metaphorical and cryptic")
+                
+                if "error" in ai_data:
+                    logger.error(f"AI Generation Failed: {ai_data['error']}")
+                    continue
+
+                # DB에 저장
+                new_q = models.Question(
+                    encoded_text=ai_data.get("encoded_sentence", "Error generating"),
+                    correct_meaning=ai_data.get("original_meaning", "Error"),
+                    difficulty=difficulty
+                )
+                db.add(new_q)
+                db.commit()
+                db.refresh(new_q)
+                
+                questions.append(new_q)
+                
             except Exception as e:
-                f.write(f"DEBUG: Error accessing success_rate: {e}\n")
+                logger.error(f"Error during auto-generation: {e}")
+                continue
     
     # 스키마 형식(id, encoded)으로 매핑하여 반환
     return [
@@ -31,10 +76,6 @@ def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
         for q in questions
     ]
 
-try:
-    from .ai import check_similarity
-except ImportError:
-    from ai import check_similarity
 
 # 정답 확인 및 결과 저장 함수
 def verify_answer(db: Session, question_id: str, user_answer: str):
@@ -131,10 +172,7 @@ def create_user(db: Session, user: schemas.UserCreate):
         db.refresh(db_user)
         return db_user
     except Exception as e:
-        with open("debug.log", "a", encoding="utf-8") as f:
-            f.write(f"ERROR in create_user: {str(e)}\n")
-            import traceback
-            f.write(traceback.format_exc())
+        print(f"ERROR in create_user: {str(e)}")
         raise e
 
 def create_guest_user(db: Session):
@@ -153,9 +191,6 @@ def verify_password(plain_password, hashed_password):
 
 # 오답 노트 CRUD (Note CRUD)
 def create_note_entry(db: Session, note: schemas.WrongAnswerNoteCreate, user_id: int):
-    with open("debug.log", "a", encoding="utf-8") as f:
-        f.write(f"DEBUG: create_note_entry called for user_id={user_id}, question_id={note.question_id}\n")
-
     # 이미 존재하는 오답노트인지 확인
     existing_note = db.query(models.WrongAnswerNote).filter(
         models.WrongAnswerNote.user_id == user_id,
@@ -163,16 +198,11 @@ def create_note_entry(db: Session, note: schemas.WrongAnswerNoteCreate, user_id:
     ).first()
     
     if existing_note:
-        with open("debug.log", "a", encoding="utf-8") as f:
-            f.write(f"DEBUG: Note already exists, updating answer to {note.user_answer}\n")
         # 이미 존재하면 답안만 업데이트
         existing_note.user_answer = note.user_answer
         db.commit()
         db.refresh(existing_note)
         return existing_note
-
-    with open("debug.log", "a", encoding="utf-8") as f:
-        f.write(f"DEBUG: Creating new note with answer {note.user_answer}\n")
 
     # 새 오답노트 생성
     db_note = models.WrongAnswerNote(
