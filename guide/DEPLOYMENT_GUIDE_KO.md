@@ -111,3 +111,24 @@ podman rm -f backend frontend ollama
     # (3) 프론트엔드 재실행 (--add-host 추가)
     podman run -d --name frontend --restart always -p 65039:80 --add-host backend:host-gateway context-frontend
     ```
+
+---
+
+## 📊 자원 모니터링 (Monitoring)
+
+배포된 컨테이너들의 CPU, 메모리, GPU 사용량을 확인하는 방법입니다.
+
+### 1. CPU 및 메모리 사용량 (`podman stats`)
+실행 중인 모든 컨테이너의 실시간 리소스 점유율을 보여줍니다.
+```bash
+podman stats
+# 종료하려면 Ctrl+C
+```
+
+### 2. GPU 사용량 (`nvidia-smi`)
+Ollama가 GPU를 잘 쓰고 있는지 확인하려면 호스트에서 아래 명령어를 입력합니다.
+```bash
+nvidia-smi
+# 또는 1초마다 갱신해서 보기:
+watch -n 1 nvidia-smi
+```
