@@ -1,0 +1,574 @@
+--- Extracting text from 설계 문서.pptx ---
+
+[Slide 1]
+Context Hunter
+설계 문서
+Presented by HuSH
+허서준, 송힘찬, 전성원, 홍준표
+
+[Slide 2]
+목차
+목차
+LLD(Low-Level Design)
+HLD(High-Level Design)
+시스템 개요
+전체 아키텍처
+기술 스택
+데이터 흐름
+주요 모듈 설명
+인터페이스 정의
+성능/보안/확장성 고려
+클래스/모듈 상세 디자인
+API 상세 설계
+DB 상세 설계
+알고리즘/로직 상세
+상태 정의
+제한사항 및 가정
+보안 및 설정
+
+[Slide 3]
+HLD(High-Level Design)
+시스템 개요
+시스템 목적
+Context Hunter는
+
+사용자가 문장을 읽고, 자신이 이해한 바를 입력하면,
+
+이를 AI가 채점하고 평가하여
+
+문해력 향상에 도움을 주는 웹 기반 게임 서비스입니다.
+
+
+
+단순한 문맥에 알맞은 단어 맞추기가 아닌,
+
+문장의 의미, 그 자체를 파악하는 능력을 기르는 것을 목표로 합니다.
+
+[Slide 4]
+HLD(High-Level Design)
+시스템 개요
+전체 기능 요약
+사용자 관리
+회원가입, 로그인(JWT), 게스트 모드 지원
+일일 모드: 매일 제공되는 10문제 풀이
+도전 모드: 무한 문제 풀이 (3회 오답 시 종료)
+사용자 답안의 문맥 유사도 분석 및 정답 판별 (Llama 3.1 8b 활용)
+게임 모드
+AI 분석
+기능
+설명
+오답 노트 저장 및 복습 기능
+도전 모드 점수 기반 글로벌 랭킹 및 명예의 전당
+학습 보조
+랭킹 시스템
+게임 결과 공유 기능
+소셜 공유
+
+[Slide 5]
+HLD(High-Level Design)
+시스템 개요
+사용자 유형 및 운영 환경
+운영 환경
+사용자 유형 및 시나리오
+일반 사용자(회원):
+로그인 후 모든 게임 모드 이용, 오답 노트 저장, 랭킹 등록 가능
+
+게스트 사용자:
+로그인 없이 게임 플레이 가능, 랭킹 등록 및 오답 노트 저장 제한적 허용 (또는 불가)
+Client:
+웹 브라우저 (Chrome, Safari, Edge 등 최신 브라우저)
+
+Server:
+Linux/Windows 환경, Python Runtime
+
+Database:
+SQLite (개발/로컬), MariaDB (운영)
+
+[Slide 6]
+HLD(High-Level Design)
+전체 아키텍처
+User (Browser)
+Load Balancer / Reverse Proxy
+Backend API (FastAPI)
+AI Service (Llama 3.1 8b)
+(Database)
+Frontend (React SPA)
+HTTP
+Static Files
+API Request
+SQL
+Internal API
+계층 구조 (Layered Architecture):
+
+
+Presentation Layer (Frontend):
+React 기반.
+사용자 인터랙션 처리 및 UI 렌더링.
+
+
+Application Layer (Backend):
+FastAPI 기반.
+비즈니스 로직, 인증, 데이터 처리 담당.
+
+
+Data Layer (Database):
+사용자 정보, 문제 데이터, 게임 기록 등을 저장하는 RDBMS.
+
+[Slide 7]
+HLD(High-Level Design)
+기술 스택
+Frontend
+TypeScript, React 19, Vite, Tailwind CSS 4
+Python 3.x, FastAPI
+MariaDB
+Llama 3.1 8b
+Backend
+AI Engine
+Main DB
+카테고리
+기술
+
+[Slide 8]
+HLD(High-Level Design)
+데이터 흐름
+사용자: 답안 입력 및 제출
+
+Frontend: API 서버로 검증 요청 (POST /api/verify)
+
+Backend:
+AI 서비스에 사용자 답안과 정답의 유사도 분석 요청
+유사도 점수 및 정답 여부 판별
+결과를 DB(Attempt 테이블)에 기록
+
+Frontend: 결과 수신 및 사용자에게 피드백(성공/실패, 유사도) 표시
+
+[Slide 9]
+HLD(High-Level Design)
+데이터 흐름
+Data Flow Diagram
+User
+Frontend
+Backend API
+AI Engine / Local Model
+Database
+1. Submit Answer
+2. POST /api/verify
+3. Request Similarity
+4. Save Attempt Log
+4. Similarity Score
+5. Result (Correct/Fail)
+6. Display Feedback
+Backend Services
+
+[Slide 10]
+HLD(High-Level Design)
+주요 모듈 설명
+Note
+역할:
+사용자 회원가입, 로그인, 토큰 발급 및 검증
+
+입력:
+사용자 ID/PW
+
+출력:
+JWT Access Token
+Game Core
+Ranking
+Auth
+역할:
+문제 출제, 정답 검증, 점수 계산
+
+내부 동작:
+난이도별 문제 랜덤 추출, AI 기반 유사도 검사 로직 수행
+역할:
+사용자 점수 집계 및 순위 제공
+
+관계:
+User 및 Guestbook 테이블과 연동하여 Top N 리스트 반환
+역할:
+틀린 문제 저장 및 조회
+
+관계:
+User와 Question 테이블을 연결하여 개인화된 학습 데이터 관리
+
+[Slide 11]
+HLD(High-Level Design)
+인터페이스 정의
+구분
+설명
+Method
+Auth
+POST
+GET
+GET
+로그인 및 토큰 발급
+내 정보 조회
+문제 목록 조회
+POST
+POST
+Game
+Note
+정답 검증 요청
+오답 노트 저장
+Game
+User
+Endpoint
+/api/auth/login
+/api/users/me
+/api/questions
+/api/verify
+/api/notes
+GET
+Rank
+랭킹 목록 조회
+/api/rankings
+
+[Slide 12]
+HLD(High-Level Design)
+성능/보안/확장성 고려
+확장성 전략
+보안 모델
+예상 성능
+Frontend 분리:
+Nginx를 통한 정적 리소스 서빙 및 캐싱 최적화
+인증:
+JWT(JSON Web Token) 기반의 Stateless 인증
+
+비밀번호:
+Pbkdf2를 이용한 단방향 해시 저장
+목표 TPS:
+초기 단계에서는 동시 접속자 수 100명 수준 처리 목표
+
+응답 속도:
+AI 분석을 제외한 일반 API 응답 200ms 이내 목표
+
+[Slide 13]
+HLD(High-Level Design)
+제한사항 및 가정
+AI 비용/자원
+AI 분석을 위해 인터넷 연결 필수
+최신 모던 브라우저(ES6+ 지원) 환경 가정
+네트워크
+브라우저
+카테고리
+요구사항
+로컬 서버 메모리(약 1GB) 및 CPU 자원 소모
+
+[Slide 14]
+LLD(Low-Level Design)
+클래스/모듈 상세 디자인
+Backend Class Diagram
+Question
++string id
++text encoded_text
++text original_text
++text correct_meaning
++int difficulty
++int correct_count
++int total_attempts
++float success_rate
++get_random_question(difficulty) : Question
+User
++int id
++string username
++string hashed_password
++boolean is_guest
++datetime created_at
++verify_password(plain_pw) : bool
++create_guest() : User
++update_ranking(nickname, score)
+WrongAnswerNote
++int id
++int user_id
++string question_id
++text user_answer
++datetime created_at
++create_note(user_id, question_id, answer)
+Attempt
++int id
++string question_id
++text user_answer
++float similarity_score
++boolean is_correct
++datetime timestamp
++log_attempt(question_id, answer, score)
+has
+referenced_by
+has_logs
+1
+N
+1
+N
+1
+N
+
+[Slide 15]
+LLD(Low-Level Design)
+API 상세 설계
+Auth API
+Method
+설명
+Endpoint
+POST
+/api/auth/register
+/api/auth/login
+/api/auth/guest
+회원가입
+로그인
+게스트 로그인
+/api/users/me
+POST
+내 정보 조회
+GET
+POST
+Request Body
+{username, password}
+OAuth2PasswordRequestForm
+-
+-
+Response Body
+UserResponse
+{access_token, token_type}
+{access_token, token_type}
+UserResponse
+
+[Slide 16]
+LLD(Low-Level Design)
+API 상세 설계
+Game API
+Method
+설명
+Endpoint
+GET
+/api/questions
+/api/verify	
+문제 목록 조회
+정답 검증
+POST
+Query Params
+difficulty (int)
+-
+Response Body
+{questions: List[Question]}
+VerifyAnswerResponse
+Request Body
+-
+{questionId, userAnswer}
+
+[Slide 17]
+LLD(Low-Level Design)
+API 상세 설계
+Note API
+Method
+설명
+Endpoint
+POST
+/api/notes
+/api/notes
+/api/rankings
+오답 노트 생성
+오답 노트 조회
+랭킹 조회
+/api/guestbook
+GET
+랭킹 저장
+POST
+GET
+Request Body
+{question_id, user_answer}
+-
+-
+{nickname, score, ...}
+Response Body
+WrongAnswerNoteResponse
+List[WrongAnswerNoteResponse]
+List[RankingEntry]
+-
+Method
+설명
+Endpoint
+Request Body
+Response Body
+Ranking API
+
+[Slide 18]
+LLD(Low-Level Design)
+API 상세 설계
+Error Codes
+Code
+Description
+ERR_USER_DUPLICATE
+이미 존재하는 사용자명입니다.
+아이디 또는 비밀번호가 일치하지 않습니다.
+요청한 문제를 찾을 수 없습니다.
+AI 서비스 응답이 지연되고 있습니다. 잠시 후 시도해주세요.
+ERR_AUTH_FAILED
+ERR_QUESTION_NOT_FOUND
+ERR_AI_SERVICE_TIMEOUT
+Status
+400
+401
+404
+503
+
+[Slide 19]
+LLD(Low-Level Design)
+API 상세 설계
+Sequence Diagram
+User
+Frontend
+Backend
+AI_Service
+DB
+User
+Frontend
+Backend
+AI_Service
+DB
+Input Answer & Submit
+POST /api/verify (questionId, userAnswer)
+Preprocess Answer (trim, lower)
+Request Verification (Llama 3.1)
+JSON {is_correct, score, feedback}
+Save Attempt Log
+Response (isCorrect, similarity, feedback)
+Show Result & Feedback
+Error
+[AI Service Error / Timeout]
+[Success]
+503 Service Unavailable
+alt
+
+[Slide 20]
+LLD(Low-Level Design)
+DB 상세 설계
+Tables & ERD
+generates
+generates
+
+[Slide 21]
+LLD(Low-Level Design)
+알고리즘/로직 상세
+문제 생성 로직
+Input: vocabulary_dataset, structure_dataset, integer N
+
+Process:
+재료 선정 : 주어진 두 데이터셋(임의로 List로 가정)에서 무작위로 추출한 단어와 문장을 제공
+프롬프트 구성 : LLM에 전달할 프롬프트를 구성, 이때 지시사항과 재료를 전달하여 In-Context, Few Shot Learning 하도록 함.
+생성 및 파싱 : 받아온 Response를 파싱해 JSON 구조로 형성
+결과 저장(Mapping) : 파싱한 데이터를 기반으로 문제를 구축
+
+Output: Question
+
+[Slide 22]
+LLD(Low-Level Design)
+알고리즘/로직 상세
+정답 검증 로직
+Input: user_input,  question_id
+
+Process:
+정답 데이터 조회 : 저장된 문제의 데이터셋에서 id로 조회, 원래 목표하는 의도를 가져옴
+전처리 : 공백 제거, 비속어 필터링 등.
+프롬프트 구성 : LLM에 전달할 프롬프트를 구성하고, 이때 정답 의도를 제공하여 In-Context, Few-Shot Learning 하도록 함
+AI 판정 : 프롬프트와 하이퍼파라미터를 전달(Temperature= 0.0으로 설정해 답변이 과하게 창의적으로 설정될 가능성을 차단)
+결과 파싱 및 변환 : AI 답변을 JSON으로 파싱
+
+Output: JSON Result (is_correct, score, feedback)
+
+[Slide 23]
+LLD(Low-Level Design)
+상태 정의
+상태 머신
+main
+난이도 선택 화면.
+게임 진행 중. 문제 풀이 및 피드백 표시.
+difficulty
+playing
+상태명
+설명
+초기 화면. 게임 모드 선택 및 메뉴 접근 가능.
+게임 종료 후 결과 화면.
+오답 노트 확인 화면.
+result
+notes
+
+[Slide 24]
+LLD(Low-Level Design)
+상태 정의
+상태 전이 조건 및 규칙
+Game Start (main -> difficulty -> playing):
+사용자가 모드(Daily/Challenge)를 선택하면 difficulty 상태로 진입합니다.
+난이도(1~3)를 선택하면 playing 상태로 진입하며, 이때 results 배열과 maxStreak가 초기화됩니다.
+
+
+Game Over (playing -> result):
+Daily Mode: 총 10라운드가 종료되면 즉시 result 상태로 전이합니다.
+Challenge Mode: 사용자 생명(lives)이 0이 되면 2초 딜레이(애니메이션) 후 result 상태로 전이합니다.
+
+
+Reset (result -> main):
+사용자가 "홈으로" 버튼을 누르면 main 상태로 돌아가며 모든 게임 진행 데이터가 초기화됩니다.
+
+[Slide 25]
+LLD(Low-Level Design)
+보안 및 설정
+서비스 포트 및 연결 정보
+서비스
+용도
+내부 포트
+Nginx
+-
+8000
+3306
+웹 브라우저 접속용
+API, ai 로직 처리
+UI 제공
+Frontend
+Backend
+외부 포트
+65039
+- (내부 통신)
+- (내부 통신)
+프로토콜
+HTTP
+HTTP
+HTTP
+연결 문자열 :
+
+Backend -> DB:
+mysql+pymysql://dbid253:dbpass253@host.docker.internal:3306/db25339 (db는 docker service name)
+
+Frontend -> Backend:
+Nginx Reverse Proxy 설정을 통해 /api 요청을 http://backend:8000으로 전달.
+
+[Slide 26]
+LLD(Low-Level Design)
+보안 및 설정
+보안 구현
+Password Hashing:
+Pbkdf2(sha256) 사용하여 pw평문이 아닌 해시값을 db에 저장 
+
+JWT:
+Sha-256을 이용한 Hmac을 사용하여 json 토큰 인증
+
+CORS:
+CORS 사용하여 허가된 서버에서 온 응답만 처리
+
+[Slide 27]
+LLD(Low-Level Design)
+보안 및 설정
+Logging Policy
+Application Log
+Access Log
+API 요청/응답 시간, 상태 코드, 클라이언트 IP (Nginx 레벨)
+INFO:
+주요 사용자 액션 (게임 시작, 랭킹 등록)
+
+WARNING:
+AI 서비스 지연
+
+ERROR:
+500 에러 발생 시 Stack Trace, DB 연결 실패
+
+[Slide 28]
+감사합니다.

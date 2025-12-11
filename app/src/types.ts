@@ -1,5 +1,5 @@
 // 게임 상태 타입 정의
-export type GameState = 'main' | 'difficulty' | 'playing' | 'result' | 'notes';
+export type GameState = 'main' | 'difficulty' | 'playing' | 'result' | 'notes' | 'terms' | 'privacy' | 'contact';
 // 게임 모드 타입 (일일 도전 / 무한 도전)
 export type GameMode = 'daily' | 'challenge';
 // 난이도 타입 (1: 청년층, 2: 중장년층, 3: 노년층)

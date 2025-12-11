@@ -6,9 +6,12 @@ import { fetchRankings, type RankingEntry } from '../lib/api';
 interface MainScreenProps {
   onSelectMode: (mode: GameMode) => void;
   onOpenNotes: () => void;
+  onTerms: () => void;
+  onPrivacy: () => void;
+  onContact: () => void;
 }
 
-export default function MainScreen({ onSelectMode, onOpenNotes }: MainScreenProps) {
+export default function MainScreen({ onSelectMode, onOpenNotes, onTerms, onPrivacy, onContact }: MainScreenProps) {
   const { user } = useAuth();
 
   return (
@@ -73,11 +76,11 @@ export default function MainScreen({ onSelectMode, onOpenNotes }: MainScreenProp
 
       {/* 푸터 */}
       <footer className="mt-16 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-        <p>&copy; 2024 Context Hunter. All rights reserved.</p>
+        <p>&copy; 2025 Context Hunter. All rights reserved.</p>
         <div className="flex justify-center gap-4 mt-2">
-          <a href="#" className="hover:text-foreground transition-colors">이용약관</a>
-          <a href="#" className="hover:text-foreground transition-colors">개인정보처리방침</a>
-          <a href="#" className="hover:text-foreground transition-colors">문의하기</a>
+          <button onClick={onTerms} className="hover:text-foreground transition-colors">이용약관</button>
+          <button onClick={onPrivacy} className="hover:text-foreground transition-colors">개인정보처리방침</button>
+          <button onClick={onContact} className="hover:text-foreground transition-colors">문의하기</button>
         </div>
       </footer>
     </div>
@@ -121,8 +124,8 @@ function MiniLeaderboard() {
           <div key={index} className="flex items-center justify-between p-2 rounded bg-background/50">
             <div className="flex items-center gap-3">
               <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                  index === 1 ? 'bg-gray-100 text-gray-700' :
-                    'bg-orange-100 text-orange-700'
+                index === 1 ? 'bg-gray-100 text-gray-700' :
+                  'bg-orange-100 text-orange-700'
                 }`}>
                 {index + 1}
               </div>

@@ -176,14 +176,12 @@ def create_user(db: Session, user: schemas.UserCreate):
         raise e
 
 def create_guest_user(db: Session):
-    # 게스트 사용자 생성
-    # 실제로는 DB에 저장하지 않고 토큰만 발급할 수도 있지만, 여기서는 임시 사용자를 생성합니다.
+    # 게스트 사용자 생성 (DB 저장 X, 토큰 발급용 임시 객체)
+    # 1회성 휘발유저이므로 DB에 남기지 않음
     import uuid
     guest_username = f"guest_{uuid.uuid4().hex[:8]}"
-    db_user = models.User(username=guest_username, is_guest=True)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    # ID는 -1로 설정하여 DB에 없는 유저임을 표시
+    db_user = models.User(id=-1, username=guest_username, is_guest=True)
     return db_user
 
 def verify_password(plain_password, hashed_password):

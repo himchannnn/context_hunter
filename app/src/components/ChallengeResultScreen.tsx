@@ -253,6 +253,49 @@ export default function ChallengeResultScreen({
           메인으로 돌아가기
         </button>
         <button
+          onClick={async () => {
+            const link = window.location.origin;
+            const text = `Context Hunter [Challenge]\nScore: ${correctCount} | Streak: ${maxStreak}\n\n끝없는 도전, 당신의 한계는 어디까지인가요?\n지금 바로 도전하세요!\n`;
+
+            const shareData = {
+              title: 'Context Hunter Challenge Result',
+              text: text,
+              url: link,
+            };
+
+            try {
+              if (navigator.share) {
+                await navigator.share(shareData);
+              } else {
+                throw new Error('Web Share API not supported');
+              }
+            } catch (err) {
+              try {
+                const clipboardText = `${text}\n👉 ${link}`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(clipboardText);
+                  alert('결과가 클립보드에 복사되었습니다! 친구들에게 공유해보세요.');
+                } else {
+                  const textArea = document.createElement("textarea");
+                  textArea.value = clipboardText;
+                  document.body.appendChild(textArea);
+                  textArea.focus();
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  alert('결과가 클립보드에 복사되었습니다! 친구들에게 공유해보세요.');
+                }
+              } catch (clipboardErr) {
+                console.error('Share failed:', clipboardErr);
+                alert('공유하기에 실패했습니다.');
+              }
+            }
+          }}
+          className="flex-1 py-4 bg-yellow-500 text-white rounded-xl font-bold hover:bg-yellow-600 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+        >
+          기록 공유하기 🏆
+        </button>
+        <button
           onClick={() => window.location.reload()} // Simple reload for restart or pass a restart handler
           className="flex-1 py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg hover:shadow-primary/30"
         >

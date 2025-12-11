@@ -144,36 +144,47 @@ export default function DailyResultScreen({ results, onRetry, onHome }: DailyRes
           onClick={async () => {
             const emojiResult = results.map(r => r.isCorrect ? '🟩' : '🟥').join('');
             const link = window.location.origin;
-            const text = `Context Hunter [Daily] ${correctCount}/${totalCount}\n${emojiResult}\n\n문맥을 파악하는 힘, Context Hunter!\n당신의 문해력을 테스트해보세요.\n👉 ${link}`;
+            const text = `Context Hunter [Daily]\nScore: ${correctCount}/${totalCount}\n\n${emojiResult}\n\n문맥을 파악하는 힘, Context Hunter!\n당신의 문해력을 테스트해보세요.\n`;
+
+            const shareData = {
+              title: 'Context Hunter Result',
+              text: text,
+              url: link,
+            };
 
             try {
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(text);
-                alert('결과가 클립보드에 복사되었습니다!');
+              if (navigator.share) {
+                await navigator.share(shareData);
               } else {
-                throw new Error('Clipboard API not available');
+                throw new Error('Web Share API not supported');
               }
             } catch (err) {
-              console.error('Failed to copy:', err);
-              // Fallback for older browsers or insecure contexts
-              const textArea = document.createElement("textarea");
-              textArea.value = text;
-              document.body.appendChild(textArea);
-              textArea.focus();
-              textArea.select();
+              // Fallback to clipboard
               try {
-                document.execCommand('copy');
-                alert('결과가 클립보드에 복사되었습니다!');
-              } catch (err) {
-                console.error('Fallback copy failed:', err);
-                alert('클립보드 복사에 실패했습니다. 직접 복사해주세요:\n\n' + text);
+                const clipboardText = `${text}\n👉 ${link}`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(clipboardText);
+                  alert('결과가 클립보드에 복사되었습니다! 친구들에게 공유해보세요.');
+                } else {
+                  // Fallback for older browsers
+                  const textArea = document.createElement("textarea");
+                  textArea.value = clipboardText;
+                  document.body.appendChild(textArea);
+                  textArea.focus();
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  alert('결과가 클립보드에 복사되었습니다! 친구들에게 공유해보세요.');
+                }
+              } catch (clipboardErr) {
+                console.error('Share failed:', clipboardErr);
+                alert('공유하기에 실패했습니다.');
               }
-              document.body.removeChild(textArea);
             }
           }}
           className="flex-1 py-4 px-4 bg-secondary text-secondary-foreground rounded-xl font-bold hover:bg-secondary/80 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
         >
-          결과 공유하기
+          결과 공유하기 📤
         </button>
         <button
           onClick={onRetry}

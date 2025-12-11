@@ -8,9 +8,10 @@ interface GameScreenProps {
   difficulty: Difficulty;
   gameMode: GameMode;
   onGameEnd: (results: GameResult[], maxStreak: number) => void;
+  onExit: () => void;
 }
 
-export default function GameScreen({ difficulty, gameMode, onGameEnd }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: GameScreenProps) {
   const [currentRound, setCurrentRound] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [results, setResults] = useState<GameResult[]>([]);
@@ -26,12 +27,15 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd }: GameScre
   const [currentStreak, setCurrentStreak] = useState(0); // 현재 연속 정답
   const [maxStreak, setMaxStreak] = useState(0); // 최대 연속 정답
   const [isShaking, setIsShaking] = useState(false); // 오답 시 흔들림 효과
+  const [showExitDialog, setShowExitDialog] = useState(false); // 나가기 확인 팝업
 
   const { playSound } = useSound();
 
   const totalRounds = gameMode === 'daily' ? 10 : 999;
 
-  // 게임 시작 시 문제 가져오기
+  // ... (useEffects remain similar) ...
+
+  // 게임 시작 시 문제 가져오기 (unchanged)
   useEffect(() => {
     const loadQuestions = async () => {
       setLoading(true);
@@ -52,6 +56,9 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd }: GameScre
 
     loadQuestions();
   }, [difficulty]);
+
+  // keydown handler (unchanged)
+  // ...
 
   // 다음 문제로 이동 핸들러 (useCallback으로 감싸서 의존성 관리)
   const handleNext = useCallback(async () => {
@@ -89,8 +96,7 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd }: GameScre
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showFeedback, lives, handleNext]);
 
-
-  // 정답 제출 핸들러
+  // 정답 제출 핸들러 (unchanged)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -174,15 +180,56 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd }: GameScre
       <div className="max-w-2xl w-full text-center space-y-4">
         <h2 className="text-2xl text-foreground">Context Hunter</h2>
         <div className="text-destructive">문제를 불러오는데 실패했습니다. ({error})</div>
+        <button onClick={onExit} className="text-primary hover:underline">메인으로 돌아가기</button>
       </div>
     );
   }
 
   return (
     <div className={`max-w-2xl w-full space-y-8 px-4 ${isShaking ? 'shake' : ''}`}>
+      {/* 나가기 확인 다이얼로그 */}
+      {showExitDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card border border-border p-6 rounded-xl shadow-xl max-w-sm w-full mx-4 space-y-4 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-foreground">게임을 종료하시겠습니까?</h3>
+            <p className="text-sm text-muted-foreground">
+              현재 진행 중인 게임 기록은 저장되지 않습니다.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowExitDialog(false)}
+                className="flex-1 py-2 px-4 rounded-lg border border-input hover:bg-accent transition-colors text-sm font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={onExit}
+                className="flex-1 py-2 px-4 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors text-sm font-medium"
+              >
+                나가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 상단 정보: 제목, 생명(도전모드), 라운드 */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl md:text-2xl text-foreground">Context Hunter</h2>
+      <div className="flex justify-between items-center relative">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowExitDialog(true)}
+            className="text-muted-foreground hover:text-destructive transition-colors p-2 -ml-2 rounded-full hover:bg-destructive/10"
+            title="나가기"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+          <h2 className="text-xl md:text-2xl text-foreground">Context Hunter</h2>
+        </div>
+
         <div className="flex items-center gap-4">
           {gameMode === 'challenge' && (
             <div className="flex items-center gap-1">
@@ -207,6 +254,8 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd }: GameScre
           )}
         </div>
       </div>
+
+      {/* ... (Rest of the UI remains unchanged) ... */}
 
       {gameMode === 'challenge' && (
         <div className="text-center text-muted-foreground text-sm md:text-base">
