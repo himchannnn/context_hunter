@@ -11,6 +11,9 @@ import { SoundProvider } from './context/SoundContext';
 import type { GameState, GameMode, Difficulty, GameResult } from './types';
 
 import WrongAnswerNoteScreen from './components/WrongAnswerNoteScreen';
+import TermsScreen from './components/TermsScreen';
+import PrivacyScreen from './components/PrivacyScreen';
+import ContactScreen from './components/ContactScreen';
 
 function AppContent() {
   // 게임 상태 관리
@@ -45,6 +48,16 @@ function AppContent() {
     };
     loadUserRank();
   }, [user, gameState]); // gameState가 변경될 때마다(게임 종료 후 등) 랭킹 업데이트 확인
+
+  // 로그아웃 시 게임 상태 초기화
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setGameState('main');
+      setResults([]);
+      setMaxStreak(0);
+      setGameMode('daily');
+    }
+  }, [isAuthenticated]);
 
   // 게임 모드 선택 핸들러
   const selectMode = (mode: GameMode) => {
@@ -149,8 +162,19 @@ function AppContent() {
       </div>
 
       {/* 게임 상태에 따른 화면 전환 */}
-      {gameState === 'main' && <MainScreen onSelectMode={selectMode} onOpenNotes={() => setGameState('notes')} />}
+      {gameState === 'main' && (
+        <MainScreen
+          onSelectMode={selectMode}
+          onOpenNotes={() => setGameState('notes')}
+          onTerms={() => setGameState('terms')}
+          onPrivacy={() => setGameState('privacy')}
+          onContact={() => setGameState('contact')}
+        />
+      )}
       {gameState === 'notes' && <WrongAnswerNoteScreen onBack={() => setGameState('main')} />}
+      {gameState === 'terms' && <TermsScreen onBack={() => setGameState('main')} />}
+      {gameState === 'privacy' && <PrivacyScreen onBack={() => setGameState('main')} />}
+      {gameState === 'contact' && <ContactScreen onBack={() => setGameState('main')} />}
       {gameState === 'difficulty' && (
         <DifficultyScreen
           onStartGame={startGame}
@@ -162,6 +186,7 @@ function AppContent() {
           difficulty={difficulty}
           gameMode={gameMode}
           onGameEnd={endGame}
+          onExit={resetGame}
         />
       )}
       {gameState === 'result' && gameMode === 'daily' && (

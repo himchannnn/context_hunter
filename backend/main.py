@@ -70,6 +70,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             raise credentials_exception
     except JWTError:
         raise credentials_exception
+    
+    # 게스트 유저 처리 (DB 조회 안 함)
+    if username.startswith("guest_"):
+        # 임시 유저 객체 생성 (id=-1)
+        return models.User(id=-1, username=username, is_guest=True, created_at=datetime.utcnow())
+
     user = crud.get_user_by_username(db, username=username)
     if user is None:
         raise credentials_exception
@@ -148,11 +154,32 @@ def create_guestbook(entry: schemas.GuestbookCreate, db: Session = Depends(get_d
 # 오답 노트 생성 엔드포인트 (인증 필요)
 @app.post("/api/notes", response_model=schemas.WrongAnswerNoteResponse)
 def create_note(note: schemas.WrongAnswerNoteCreate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 게스트는 오답노트 저장 안 함 (휘발성)
+    if current_user.id == -1:
+        # 가짜 응답 반환 (프론트엔드 에러 방지용)
+        # Note: 실제 DB에 없으므로 ID는 임의값, created_at은 현재 시간
+        return schemas.WrongAnswerNoteResponse(
+            id=-1,
+            user_id=-1,
+            question_id=note.question_id,
+            user_answer=note.user_answer,
+            created_at=datetime.utcnow(),
+            question=schemas.Question(
+                id=note.question_id, 
+                encoded="Guest Mode - Not Saved", 
+                correct_count=0, 
+                total_attempts=0, 
+                success_rate=0.0
+            ) 
+        )
     return crud.create_note_entry(db, note, current_user.id)
 
 # 내 오답 노트 조회 엔드포인트 (인증 필요)
 @app.get("/api/notes", response_model=List[schemas.WrongAnswerNoteResponse])
 def read_notes(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 게스트는 오답노트 없음
+    if current_user.id == -1:
+        return []
     return crud.get_user_notes(db, current_user.id)
 
 from fastapi.staticfiles import StaticFiles
