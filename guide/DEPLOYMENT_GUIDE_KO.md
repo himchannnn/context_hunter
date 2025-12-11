@@ -14,14 +14,15 @@
 백엔드에서 사용할 AI 모델을 위해 Ollama를 GPU 모드로 실행합니다.
 
 ```bash
-podman run -d \
   --name ollama \
   --restart always \
   --network host \
   --device /dev/nvidia0:/dev/nvidia0 \
-  -v ollama:/root/.ollama \
+  -v ./ollama_data:/root/.ollama \
   ollama/ollama
 ```
+
+*변경점: 안정성을 위해 `-v ollama:...` (볼륨) 대신 `-v ./ollama_data:...` (현재 폴더)를 사용합니다.*
 
 **⚠️ 중요: 모델 다운로드 (최초 1회 필수)**
 Ollama 컨테이너가 실행된 후, 반드시 아래 명령어로 모델을 받아야 합니다.
@@ -76,9 +77,20 @@ podman run -d \
 
 ---
 
-## 🧹 정리 및 재시작 (Cleanup)
+## 🧹 정리 및 재시작 (Cleanup & Troubleshooting)
 
-설정을 바꾸거나 "사용 중인 이름(name already in use)" 에러가 뜰 경우:
+**"acquiring lock ... file exists" 오류가 발생할 때:**
+컨테이너가 비정상 종료되면 락 파일이 꼬일 수 있습니다. 아래 명령어로 해결하세요.
+
+```bash
+# 1. Podman 상태 복구 (가장 중요)
+podman system migrate
+
+# 2. 꼬인 컨테이너가 있다면 강제 삭제
+podman rm -f ollama backend frontend
+```
+
+설정을 바꾸거나 재시작할 때:
 
 ```bash
 # 기존 컨테이너 삭제
