@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GameResult, Difficulty } from '../types';
 import { saveGuestbook, fetchRankings, type RankingEntry, createNote } from '../lib/api';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -26,11 +26,14 @@ export default function ChallengeResultScreen({
 
   const correctCount = results.filter((r) => r.isCorrect).length;
 
+  const saveAttempted = useRef(false);
+
   // 컴포넌트 마운트 시 랭킹 로드 및 자동 저장 시도
   useEffect(() => {
     console.log('ChallengeResultScreen mounted. Difficulty:', difficulty);
     loadRankings();
-    if (user && !user.is_guest) {
+    if (user && !user.is_guest && !saveAttempted.current) {
+      saveAttempted.current = true;
       handleAutoSaveGuestbook();
     }
   }, [user]); // difficulty 의존성 제거 (랭킹은 통합됨)

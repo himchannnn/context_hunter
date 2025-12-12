@@ -25,6 +25,8 @@ SEED_CONTEXTS = [
 ]
 import random
 
+import uuid
+
 # 난이도별 문제 조회 함수
 def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
     # 1. DB에서 문제 조회
@@ -50,7 +52,9 @@ def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
 
                 # DB에 저장
                 new_q = models.Question(
+                    id=f"q_{difficulty}_{uuid.uuid4().hex[:8]}", # Unique ID 생성
                     encoded_text=ai_data.get("encoded_sentence", "Error generating"),
+                    original_text=context, # 원문 추가
                     correct_meaning=ai_data.get("original_meaning", "Error"),
                     difficulty=difficulty
                 )
@@ -69,6 +73,7 @@ def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
         {
             "id": q.id, 
             "encoded": q.encoded_text, 
+            "correct_meaning": q.correct_meaning,
             "correct_count": q.correct_count, 
             "total_attempts": q.total_attempts, 
             "success_rate": q.success_rate

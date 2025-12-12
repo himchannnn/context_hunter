@@ -86,9 +86,23 @@ class AIClient:
         1. Correct Meaning: "{correct_meaning}"
         2. User Answer: "{user_answer}"
         
-        Are they semantically similar in the given context?
-        Even if the words are different, if the core meaning is the same, it is Correct.
-        If the meaning is opposite or irrelevant, it is Incorrect.
+        Evaluate the semantic similarity.
+        
+        [Instructions]
+        - Focus on the **intent and core meaning**, not just literal word matching.
+        - Paraphrasing, synonyms, and different sentence structures that convey the same message should receive high scores (80-100).
+        - "배가 고프다" (hungry) and "식사를 하고 싶다" (want to eat) are contextually similar enough to be correct.
+        - Only mark as 0-49 if the meaning is truly unrelated or opposite.
+        
+        [Scoring Guidelines]
+        - 100: Perfect match or perfect paraphrase.
+        - 80-99: Core meaning is the same, but slightly different tone or word choice.
+        - 50-79: Partially correct, captures part of the meaning but misses nuance.
+        - 0-49: Incorrect meaning, irrelevant, or opposite.
+        
+        [Decision Rule]
+        - is_correct: true if similarity_score >= 50
+        - is_correct: false if similarity_score < 50
         
         Return JSON only:
         {{
@@ -116,7 +130,7 @@ class AIClient:
             return {
                 "similarity_score": 0,
                 "is_correct": False,
-                "feedback": f"AI 판별 오류: {str(e)}"
+                "feedback": f"AI Check Failed. Error Details: {str(e)}"
             }
 
 # 싱글톤 인스턴스 생성

@@ -6,6 +6,7 @@ from datetime import datetime
 class QuestionBase(BaseModel):
     id: str
     encoded: str
+    correct_meaning: str
 
 class Question(QuestionBase):
     correct_count: int

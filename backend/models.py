@@ -98,7 +98,7 @@ class Guestbook(Base):
     __tablename__ = "guestbook"
 
     id = Column(Integer, primary_key=True, index=True)
-    nickname = Column(String(50), nullable=False) # 랭킹에 표시될 닉네임
+    nickname = Column(String(50), unique=True, index=True, nullable=False) # 랭킹에 표시될 닉네임
     score = Column(Integer, default=0) # 맞춘 문제 수
     max_streak = Column(Integer, default=0) # 최대 연속 정답 수
     difficulty = Column(Integer, default=1) # 플레이한 난이도
