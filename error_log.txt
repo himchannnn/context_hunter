@@ -1,1 +1,0 @@
-{"isCorrect":false,"feedback":"사용자 답변은 원하는 의미와 관련이 없습니다.","correctAnswer":"엎친 데 덮친 격 (상황을 더 악화시키다).","similarity":0.0}
