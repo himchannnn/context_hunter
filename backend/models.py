@@ -36,6 +36,7 @@ class Question(Base):
     original_text = Column(Text, nullable=False) # 원본 문장 (참고용)
     correct_meaning = Column(Text, nullable=False) # AI 비교를 위한 정답 해석
     difficulty = Column(Integer, default=1) # 난이도 (1: 청년, 2: 중장년, 3: 노년)
+    category = Column(String(50), default="general") # 분야 (politics, economy, society, culture, it, world)
 
     word = relationship("ConfusingWord", back_populates="questions")
     context = relationship("ContextSentence", back_populates="questions")
@@ -63,6 +64,10 @@ class User(Base):
     username = Column(String(50), unique=True, index=True, nullable=True) # 사용자 ID (게스트는 Null 가능)
     hashed_password = Column(String(255), nullable=True) # 해시된 비밀번호
     is_guest = Column(Boolean, default=False) # 게스트 여부
+    credits = Column(Integer, default=0) # 보유 크레딧
+    owned_themes = Column(Text, default="default") # 보유 테마 (쉼표로 구분)
+    equipped_theme = Column(String(50), default="default") # 장착 중인 테마
+    total_solved = Column(Integer, default=0) # 총 정답 문제 수
     created_at = Column(DateTime(timezone=True), server_default=func.now()) # 생성일
 
     notes = relationship("WrongAnswerNote", back_populates="user")
@@ -103,3 +108,16 @@ class Guestbook(Base):
     max_streak = Column(Integer, default=0) # 최대 연속 정답 수
     difficulty = Column(Integer, default=1) # 플레이한 난이도
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+# 일일 모드 진행 상황 모델
+class DailyProgress(Base):
+    __tablename__ = "daily_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # 로그인 유저 (게스트는 로컬스토리지 관리라 DB 저장 안함)
+    date = Column(String(10), nullable=False) # "YYYY-MM-DD"
+    # 클리어한 분야 목록을 쉼표로 구분하여 저장 (예: "politics,economy")
+    cleared_domains = Column(Text, default="") 
+    reward_claimed = Column(Boolean, default=False) # 일일 보상 수령 여부 
+    
+    user = relationship("User")

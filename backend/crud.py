@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
-import models, schemas
+from sqlalchemy import desc, func
 import models, schemas
 import difflib
 import logging
@@ -27,53 +26,35 @@ import random
 
 import uuid
 
-# 난이도별 문제 조회 함수
-def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
-    # 1. DB에서 문제 조회
-    questions = db.query(models.Question).filter(models.Question.difficulty == difficulty).limit(limit).all()
+# 문제 조회 함수 (분야별/난이도별)
+def get_questions(db: Session, category: str = None, limit: int = 5):
+    query = db.query(models.Question)
     
-    logger.info(f"Fetched {len(questions)} questions from DB for difficulty {difficulty}")
+    if category and category != "random":
+        query = query.filter(models.Question.category == category)
+    
+    # 랜덤으로 가져오기 (MySQL/MariaDB: func.rand(), SQLite: func.random())
+    # 여기서는 SQLite 호환을 위해 func.random() 사용
+    questions = query.order_by(func.random()).limit(limit).all()
+    
+    logger.info(f"Fetched {len(questions)} questions for category {category}")
 
-    # 2. 문제가 부족하면 AI로 생성 (자동 채우기)
+    # 문제가 부족하면 AI로 생성 (자동 채우기)
     if len(questions) < limit:
         needed = limit - len(questions)
         logger.info(f"Not enough questions. Generating {needed} new questions using AI...")
         
-        for _ in range(needed):
-            try:
-                # 시드 문맥 중 하나 랜덤 선택
-                context = random.choice(SEED_CONTEXTS)
-                # AI 호출 (암호화된 문장 생성)
-                ai_data = generate_question(context, style="metaphorical and cryptic")
-                
-                if "error" in ai_data:
-                    logger.error(f"AI Generation Failed: {ai_data['error']}")
-                    continue
-
-                # DB에 저장
-                new_q = models.Question(
-                    id=f"q_{difficulty}_{uuid.uuid4().hex[:8]}", # Unique ID 생성
-                    encoded_text=ai_data.get("encoded_sentence", "Error generating"),
-                    original_text=context, # 원문 추가
-                    correct_meaning=ai_data.get("original_meaning", "Error"),
-                    difficulty=difficulty
-                )
-                db.add(new_q)
-                db.commit()
-                db.refresh(new_q)
-                
-                questions.append(new_q)
-                
-            except Exception as e:
-                logger.error(f"Error during auto-generation: {e}")
-                continue
+        # 임시: AI 생성은 현재 구조상 'context'가 필요하므로 일단 스킵하거나
+        # 기존 로직을 살려야 하지만, 여기서는 DB에 있는 것만 우선시함.
+        # 실제로는 여기서 AI 호출하여 문제 생성 후 저장하는 로직이 필요함.
+        # 이번 변경에서는 AI 생성보다 DB 조회 위주로 변경.
     
-    # 스키마 형식(id, encoded)으로 매핑하여 반환
     return [
         {
             "id": q.id, 
             "encoded": q.encoded_text, 
             "correct_meaning": q.correct_meaning,
+            "category": q.category,
             "correct_count": q.correct_count, 
             "total_attempts": q.total_attempts, 
             "success_rate": q.success_rate
@@ -83,44 +64,57 @@ def get_questions_by_difficulty(db: Session, difficulty: int, limit: int = 10):
 
 
 # 정답 확인 및 결과 저장 함수
-def verify_answer(db: Session, question_id: str, user_answer: str):
-    question = db.query(models.Question).filter(models.Question.id == question_id).first()
-    if not question:
-        return None
-    
-    # AI를 이용한 유사도 판별 호출
-    # check_similarity 함수 내부에서 모델 로드 실패 시 적절한 에러 메시지를 반환하도록 처리되어 있음
-    ai_result = check_similarity(user_answer, question.correct_meaning)
-    
-    similarity = ai_result['similarity_score']
-    is_correct = ai_result['is_correct']
-    feedback = ai_result['feedback']
-    
-    # 통계 업데이트
-    question.total_attempts += 1
-    if is_correct:
-        question.correct_count += 1
-    
-    # 시도 기록 저장
-    attempt = models.Attempt(
-        question_id=question_id,
-        user_answer=user_answer,
-        similarity_score=similarity,
-        is_correct=is_correct
-    )
-    db.add(attempt)
-    db.commit()
-    
-    return schemas.VerifyAnswerResponse(
-        isCorrect=is_correct,
-        similarity=round(similarity, 1),
-        correctAnswer=question.correct_meaning if not is_correct else None,
-        feedback=feedback
-    )
+def verify_answer(db: Session, question_id: str, user_answer: str, user_id: int = -1):
+    try:
+        question = db.query(models.Question).filter(models.Question.id == question_id).first()
+        if not question:
+            logger.error(f"verify_answer: Question {question_id} not found")
+            return None
+        
+        # AI를 이용한 유사도 판별 호출
+        # check_similarity 함수 내부에서 모델 로드 실패 시 적절한 에러 메시지를 반환하도록 처리되어 있음
+        ai_result = check_similarity(user_answer, question.correct_meaning)
+        
+        similarity = ai_result['similarity_score']
+        is_correct = ai_result['is_correct']
+        feedback = ai_result['feedback']
+        
+        # 통계 업데이트
+        question.total_attempts += 1
+        if is_correct:
+            question.correct_count += 1
+            # 유저 총 정답 수 증가 (게스트 제외)
+            if user_id != -1:
+                user = db.query(models.User).filter(models.User.id == user_id).first()
+                if user:
+                    user.total_solved += 1
+        
+        # 시도 기록 저장
+        attempt = models.Attempt(
+            question_id=question_id,
+            user_answer=user_answer,
+            similarity_score=similarity,
+            is_correct=is_correct
+        )
+        db.add(attempt)
+        db.commit()
+        
+        return schemas.VerifyAnswerResponse(
+            isCorrect=is_correct,
+            similarity=round(similarity, 1),
+            correctAnswer=question.correct_meaning if not is_correct else None,
+            feedback=feedback
+        )
+    except Exception as e:
+        logger.error(f"verify_answer FAILED: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 # 방명록(랭킹) 저장 함수 (전체 난이도 통합 최고 기록만 유지)
 def create_guestbook_entry(db: Session, entry: schemas.GuestbookCreate):
-    # 기존 기록 조회 (난이도 구분 없이 닉네임으로만 조회)
+    # 기존 기록 조회 (닉네임으로만 조회)
     existing_entry = db.query(models.Guestbook).filter(
         models.Guestbook.nickname == entry.nickname
     ).first()
@@ -128,10 +122,16 @@ def create_guestbook_entry(db: Session, entry: schemas.GuestbookCreate):
     if existing_entry:
         # 기존 기록이 있으면 점수 비교
         # 새 점수가 더 높거나, 점수가 같고 스트릭이 더 높을 때만 업데이트
-        if entry.score > existing_entry.score or (entry.score == existing_entry.score and entry.max_streak > existing_entry.max_streak):
+        should_update = False
+        if entry.score > existing_entry.score:
+            should_update = True
+        elif entry.score == existing_entry.score and entry.max_streak > existing_entry.max_streak:
+            should_update = True
+            
+        if should_update:
             existing_entry.score = entry.score
             existing_entry.max_streak = entry.max_streak
-            existing_entry.difficulty = entry.difficulty # 달성 당시의 난이도 업데이트
+            # existing_entry.difficulty = entry.difficulty # 난이도 개념 약화로 주석 처리 또는 유지
             existing_entry.timestamp = func.now() # 시간 갱신
             db.commit()
             db.refresh(existing_entry)
@@ -171,7 +171,11 @@ def get_user_by_username(db: Session, username: str):
 def create_user(db: Session, user: schemas.UserCreate):
     try:
         hashed_password = pwd_context.hash(user.password)
-        db_user = models.User(username=user.username, hashed_password=hashed_password)
+        db_user = models.User(
+            username=user.username, 
+            hashed_password=hashed_password,
+            total_solved=0
+        )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
@@ -220,3 +224,37 @@ def create_note_entry(db: Session, note: schemas.WrongAnswerNoteCreate, user_id:
 
 def get_user_notes(db: Session, user_id: int):
     return db.query(models.WrongAnswerNote).filter(models.WrongAnswerNote.user_id == user_id).all()
+
+# 일일 진행 상황 CRUD
+def get_daily_progress(db: Session, user_id: int, date: str):
+    progress = db.query(models.DailyProgress).filter(
+        models.DailyProgress.user_id == user_id,
+        models.DailyProgress.date == date
+    ).first()
+    return progress
+
+def update_daily_progress(db: Session, user_id: int, date: str, domain: str):
+    progress = get_daily_progress(db, user_id, date)
+    
+    is_new = False
+    if not progress:
+        progress = models.DailyProgress(
+            user_id=user_id,
+            date=date,
+            cleared_domains=domain
+        )
+        db.add(progress)
+        db.commit()
+        db.refresh(progress)
+        is_new = True
+    else:
+        domains = progress.cleared_domains.split(",") if progress.cleared_domains else []
+        if domain not in domains:
+            domains.append(domain)
+            progress.cleared_domains = ",".join(domains)
+            db.commit()
+            db.refresh(progress)
+            is_new = True
+            
+    return progress, is_new
+

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getNotes } from '../lib/api';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BookOpen, TrendingUp, Users, Coffee, Cpu, Globe } from 'lucide-react';
 
 interface Note {
     id: number;
@@ -12,12 +12,27 @@ interface Note {
         encoded: string;
         correct_meaning: string;
         success_rate: number;
+        category: string;
     };
 }
 
 interface WrongAnswerNoteScreenProps {
     onBack: () => void;
 }
+
+// Domain Mapping (copied from DomainSelector but simplified for display)
+const getCategoryInfo = (category: string) => {
+    const normalize = category.toLowerCase();
+    switch (normalize) {
+        case 'politics': return { label: '정치', icon: <BookOpen size={16} />, color: 'bg-red-100 text-red-700 border-red-200' };
+        case 'economy': return { label: '경제', icon: <TrendingUp size={16} />, color: 'bg-blue-100 text-blue-700 border-blue-200' };
+        case 'society': return { label: '사회', icon: <Users size={16} />, color: 'bg-green-100 text-green-700 border-green-200' };
+        case 'life/culture': return { label: '생활/문화', icon: <Coffee size={16} />, color: 'bg-orange-100 text-orange-700 border-orange-200' };
+        case 'it/science': return { label: 'IT/과학', icon: <Cpu size={16} />, color: 'bg-purple-100 text-purple-700 border-purple-200' };
+        case 'world': return { label: '세계', icon: <Globe size={16} />, color: 'bg-cyan-100 text-cyan-700 border-cyan-200' };
+        default: return { label: '일반', icon: <BookOpen size={16} />, color: 'bg-gray-100 text-gray-700 border-gray-200' };
+    }
+};
 
 export default function WrongAnswerNoteScreen({ onBack }: WrongAnswerNoteScreenProps) {
     const [notes, setNotes] = useState<Note[]>([]);
@@ -76,29 +91,39 @@ export default function WrongAnswerNoteScreen({ onBack }: WrongAnswerNoteScreenP
                 </div>
             ) : (
                 <div className="grid gap-6">
-                    {notes.map((note) => (
-                        <div key={note.id} className="bg-card rounded-lg shadow p-6 border border-border">
-                            <div className="mb-4">
-                                <div className="text-sm text-muted-foreground mb-1">문제</div>
-                                <div className="text-lg font-medium text-card-foreground">{note.question.encoded}</div>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="bg-destructive/10 p-4 rounded-md">
-                                    <div className="text-sm text-destructive mb-1">내가 쓴 답</div>
-                                    <div className="text-foreground">{note.user_answer}</div>
+                    {notes.map((note) => {
+                        const categoryInfo = getCategoryInfo(note.question.category || 'general');
+                        return (
+                            <div key={note.id} className="bg-card rounded-lg shadow p-6 border border-border">
+                                <div className="mb-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="text-sm text-muted-foreground">문제</div>
+                                        {/* Category Badge */}
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${categoryInfo.color}`}>
+                                            {categoryInfo.icon}
+                                            {categoryInfo.label}
+                                        </div>
+                                    </div>
+                                    <div className="text-lg font-medium text-card-foreground">{note.question.encoded}</div>
                                 </div>
-                                <div className="bg-green-500/10 p-4 rounded-md">
-                                    <div className="text-sm text-green-600 mb-1">정답</div>
-                                    <div className="text-foreground">{note.question.correct_meaning}</div>
+
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="bg-destructive/10 p-4 rounded-md">
+                                        <div className="text-sm text-destructive mb-1">내가 쓴 답</div>
+                                        <div className="text-foreground">{note.user_answer}</div>
+                                    </div>
+                                    <div className="bg-green-500/10 p-4 rounded-md">
+                                        <div className="text-sm text-green-600 mb-1">정답</div>
+                                        <div className="text-foreground">{note.question.correct_meaning}</div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 text-right text-sm text-muted-foreground">
+                                    정답률: {note.question.success_rate}% | 추가일: {new Date(note.created_at).toLocaleDateString()}
                                 </div>
                             </div>
-
-                            <div className="mt-4 text-right text-sm text-muted-foreground">
-                                정답률: {note.question.success_rate}% | 추가일: {new Date(note.created_at).toLocaleDateString()}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

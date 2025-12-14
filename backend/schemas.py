@@ -7,6 +7,7 @@ class QuestionBase(BaseModel):
     id: str
     encoded: str
     correct_meaning: str
+    category: str = "general"
 
 class Question(QuestionBase):
     correct_count: int
@@ -32,6 +33,11 @@ class UserLogin(UserBase):
 class UserResponse(UserBase):
     id: int
     is_guest: bool
+    credits: int = 0
+    owned_themes: str = "default"
+    equipped_theme: str = "default"
+    total_solved: int = 0
+    daily_progress_count: int = 0
     created_at: datetime
 
     class Config:
@@ -83,3 +89,28 @@ class RankingEntry(GuestbookBase):
 
     class Config:
         from_attributes = True
+
+# 일일 진행 상황 스키마
+class DailyProgressBase(BaseModel):
+    date: str
+    cleared_domains: str
+
+class DailyProgressUpdate(BaseModel):
+    date: str
+    domain: str
+
+class DailyProgressResponse(DailyProgressBase):
+    id: int
+    user_id: int
+    reward_claimed: bool = False
+    credits_awarded: int = 0 # 이번 호출로 지급된 크레딧 (0 또는 10)
+
+    class Config:
+        from_attributes = True
+
+# 상점 및 테마 스키마
+class ShopPurchaseRequest(BaseModel):
+    theme_id: str
+
+class ThemeEquipRequest(BaseModel):
+    theme_id: str

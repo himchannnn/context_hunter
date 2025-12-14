@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GameResult } from '../types';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { createNote } from '../lib/api';
+import { createNote, updateDailyProgress } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 interface DailyResultScreenProps {
@@ -13,10 +13,50 @@ interface DailyResultScreenProps {
 export default function DailyResultScreen({ results, onRetry, onHome }: DailyResultScreenProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [addedNotes, setAddedNotes] = useState<Set<string>>(new Set());
-  const { user } = useAuth();
+  const updateAttempted = useRef(false);
 
   const correctCount = results.filter((r) => r.isCorrect).length;
   const totalCount = results.length;
+  const isClear = totalCount > 0; // 문제를 풀기만 하면 클리어 처리 (4/5 조건 제거)
+
+  const { user, refreshUser } = useAuth();
+
+  // Credit Awarded State
+  const [creditsEarned, setCreditsEarned] = useState<number>(0);
+
+  useEffect(() => {
+    const handleProgress = async () => {
+      if (isClear && !updateAttempted.current && results.length > 0) {
+        updateAttempted.current = true;
+        const domain = results[0].question.category;
+        if (domain) {
+          try {
+            const date = new Date().toISOString().split('T')[0];
+            const token = localStorage.getItem('token');
+            const response = await updateDailyProgress(token, date, domain);
+
+            if (response && response.credits_awarded && response.credits_awarded > 0) {
+              setCreditsEarned(response.credits_awarded);
+              // alert is optional now if we show UI, but user asked for "message in result window"
+              // Keeping alert off or customized? User said "result window content".
+              // Let's keep alert for now or remove if UI is sufficient? 
+              // "결과창에 크레딧 지급을 했음을 알려주는 내용이 있었으면 좋겠음" implies UI text.
+              // alert(`🎉 '${domain}' 분야 클리어! ${response.credits_awarded} 크레딧을 획득했습니다!`); 
+              // Let's remove alert to be cleaner, or keep as fallback? 
+              // User disliked "claim button", so auto-award + UI badge is best.
+              await refreshUser();
+            } else {
+              await refreshUser();
+            }
+
+          } catch (e) {
+            console.error("Failed to update daily progress", e);
+          }
+        }
+      }
+    };
+    handleProgress();
+  }, [isClear, results]);
 
   // 오답노트에 추가 핸들러
   const handleAddToNote = async (questionId: string, userAnswer: string) => {
@@ -45,6 +85,13 @@ export default function DailyResultScreen({ results, onRetry, onHome }: DailyRes
         <div className="text-4xl md:text-6xl font-bold text-primary mb-4">
           {correctCount} / {totalCount}
         </div>
+        {creditsEarned > 0 && (
+          <div className="mb-4 animate-bounce">
+            <span className="bg-yellow-100 text-yellow-800 text-lg font-bold px-4 py-2 rounded-full border border-yellow-300 shadow-sm flex items-center justify-center gap-2 w-fit mx-auto">
+              <span>💎</span> {creditsEarned} 크레딧 획득!
+            </span>
+          </div>
+        )}
         <p className="text-muted-foreground text-sm md:text-base">
           {correctCount === totalCount
             ? '완벽합니다! 모든 문제를 맞추셨어요.'
@@ -146,29 +193,29 @@ export default function DailyResultScreen({ results, onRetry, onHome }: DailyRes
             const link = window.location.origin;
             const text = `Context Hunter [Daily]\nScore: ${correctCount}/${totalCount}\n\n${emojiResult}\n\n문맥을 파악하는 힘, Context Hunter!\n당신의 문해력을 테스트해보세요.\n`;
 
-            const shareData = {
-              title: 'Context Hunter Result',
-              text: text,
-              url: link,
-            };
-
             try {
               if (navigator.share) {
-                await navigator.share(shareData);
+                await navigator.share({
+                  title: 'Context Hunter Result',
+                  text: text,
+                });
               } else {
                 throw new Error('Web Share API not supported');
               }
             } catch (err) {
-              // Fallback to clipboard
               try {
-                const clipboardText = `${text}\n👉 ${link}`;
+                const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                let shareText = text;
+                if (isProd) {
+                  shareText += `\n👉 ${link}`;
+                }
+
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                  await navigator.clipboard.writeText(clipboardText);
+                  await navigator.clipboard.writeText(shareText);
                   alert('결과가 클립보드에 복사되었습니다! 친구들에게 공유해보세요.');
                 } else {
-                  // Fallback for older browsers
                   const textArea = document.createElement("textarea");
-                  textArea.value = clipboardText;
+                  textArea.value = shareText;
                   document.body.appendChild(textArea);
                   textArea.focus();
                   textArea.select();

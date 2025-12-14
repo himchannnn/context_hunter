@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { GameMode } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { fetchRankings, type RankingEntry } from '../lib/api';
+import { ShoppingBag, Palette, BookOpen } from 'lucide-react';
 
 interface MainScreenProps {
   onSelectMode: (mode: GameMode) => void;
@@ -9,68 +10,115 @@ interface MainScreenProps {
   onTerms: () => void;
   onPrivacy: () => void;
   onContact: () => void;
+  onShop: () => void;
+  onTheme: () => void;
 }
 
-export default function MainScreen({ onSelectMode, onOpenNotes, onTerms, onPrivacy, onContact }: MainScreenProps) {
+export default function MainScreen({ onSelectMode, onOpenNotes, onTerms, onPrivacy, onContact, onShop, onTheme }: MainScreenProps) {
   const { user } = useAuth();
+  // ... (keep existing code up to button section)
+  // Replacing button section:
 
   return (
-    <div className="max-w-2xl w-full text-center space-y-8 md:space-y-12 px-4 pb-8">
+    <div className="max-w-2xl w-full mx-auto text-center space-y-8 md:space-y-12 px-4 pb-8">
+      {/* ... keeping previous sections ... */}
+
       {/* 타이틀 섹션 */}
       <div className="space-y-4">
-        <h1 className="text-4xl md:text-6xl tracking-tight text-foreground">Context Hunter</h1>
-        <p className="text-muted-foreground">문맥을 찾는 사람</p>
+        <h1 className="text-4xl md:text-6xl tracking-tight font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+          Context Hunter
+        </h1>
       </div>
 
       {/* 게임 설명 섹션 */}
-      <div className="bg-card border border-border rounded-lg p-6 md:p-8 space-y-4 text-left">
-        <h2 className="text-xl text-card-foreground">게임 방법</h2>
-        <ul className="space-y-2 text-muted-foreground text-sm md:text-base">
-          <li>• 암호화된 문장이 주어집니다</li>
-          <li>• 문장을 보고 해석한 후 같은 의미의 문장을 입력하세요</li>
-          <li>• 연령층에 맞는 문장이 제공됩니다</li>
-          <li>• AI가 답변의 정확도를 판단합니다</li>
+      <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 md:p-8 space-y-4 text-left shadow-lg">
+        <h2 className="text-xl font-bold text-card-foreground flex items-center gap-2">
+          🎯 게임 방법
+        </h2>
+        <ul className="space-y-3 text-muted-foreground text-sm md:text-base">
+          <li className="flex items-start gap-2">
+            <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">1</span>
+            <span>다양한 분야의 문장을 읽고 문맥을 파악하세요</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">2</span>
+            <span>주어진 문장과 비슷한 의미의 문장을 입력하세요</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">3</span>
+            <span>AI가 당신의 문해력을 측정합니다</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">4</span>
+            <span>일일 도전 각 분야 완료 시 10 크레딧을 부여합니다</span>
+          </li>
         </ul>
       </div>
 
       {/* 모드 선택 섹션 */}
-      <div className="space-y-4">
-        <h3 className="text-lg text-foreground">모드 선택</h3>
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => onSelectMode('daily')}
-            className="flex-1 w-full md:max-w-xs p-6 md:p-8 border-2 border-primary rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 text-foreground shadow-sm hover:shadow-xl"
+            className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
-            <div className="text-2xl mb-2 font-bold">일일</div>
-            <div className="text-sm opacity-90">10개의 문제</div>
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-200 transition-colors">
+              <span className="text-2xl">📅</span>
+            </div>
+            <div className="text-xl font-bold text-green-700 mb-1">일일 도전</div>
+            <div className="text-sm text-green-600/80">매일 새로운 6개 분야</div>
           </button>
+
           <button
             onClick={() => onSelectMode('challenge')}
-            className="flex-1 w-full md:max-w-xs p-6 md:p-8 border-2 border-primary rounded-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 text-foreground shadow-sm hover:shadow-xl"
+            className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
-            <div className="text-2xl mb-2 font-bold">도전</div>
-            <div className="text-sm opacity-90">3번 틀릴 때까지</div>
+            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-orange-200 transition-colors">
+              <span className="text-2xl">⚡</span>
+            </div>
+            <div className="text-xl font-bold text-orange-700 mb-1">무한 도전</div>
+            <div className="text-sm text-orange-600/80">한계에 도전하세요</div>
           </button>
         </div>
       </div>
 
-      {/* 오답노트 버튼 (로그인한 사용자만 표시) */}
+      {/* 사용자 기능 (오답노트, 상점, 테마) - 게스트 숨김 */}
       {user && !user.is_guest && (
-        <div>
+        <div className="flex justify-center gap-4">
           <button
             onClick={onOpenNotes}
-            className="text-muted-foreground hover:text-foreground underline"
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors text-gray-600 hover:text-blue-600"
           >
-            오답노트 보기
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-medium">오답노트</span>
+          </button>
+
+          <button
+            onClick={onShop}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors text-gray-600 hover:text-purple-600"
+          >
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-medium">상점</span>
+          </button>
+
+          <button
+            onClick={onTheme}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors text-gray-600 hover:text-pink-600"
+          >
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Palette className="w-6 h-6" />
+            </div>
+            <span className="text-xs font-medium">테마</span>
           </button>
         </div>
       )}
 
       {/* 명예의 전당 (Mini Leaderboard) */}
       <div className="w-full max-w-md mx-auto mt-8">
-        <h3 className="text-lg font-bold text-foreground mb-4 flex items-center justify-center gap-2">
-          <span>🏆</span> 명예의 전당 <span>🏆</span>
-        </h3>
         <MiniLeaderboard />
       </div>
 
@@ -90,48 +138,52 @@ export default function MainScreen({ onSelectMode, onOpenNotes, onTerms, onPriva
 function MiniLeaderboard() {
   const [topRankers, setTopRankers] = useState<RankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
   useEffect(() => {
     const load = async () => {
-      if (user && !user.is_guest) { // Only fetch if logged in
-        try {
-          const data = await fetchRankings();
-          // 점수 내림차순 정렬 후 상위 3명만
-          const sorted = data.sort((a, b) => b.score - a.score).slice(0, 3);
-          setTopRankers(sorted);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      } else {
+      // 누구나 랭킹 볼 수 있음
+      try {
+        const data = await fetchRankings();
+        // 점수 내림차순 정렬 (score DESC, max_streak DESC)
+        // Backend should do sorting, but let's double check or sort here
+        const sorted = data.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return b.max_streak - a.max_streak;
+        }).slice(0, 3);
+        setTopRankers(sorted);
+      } catch (err) {
+        console.error(err);
+      } finally {
         setLoading(false);
-        setTopRankers([]);
       }
     };
     load();
-  }, [user]);
+  }, []);
 
-  if (loading) return <div className="text-sm text-muted-foreground">랭킹 불러오는 중...</div>;
-  if (!user || user.is_guest) return <div className="text-sm text-muted-foreground">로그인 후 랭킹을 볼 수 있습니다.</div>;
-  if (topRankers.length === 0) return <div className="text-sm text-muted-foreground">아직 랭킹이 없습니다.</div>;
+  if (loading) return <div className="text-sm text-muted-foreground animate-pulse">랭킹 불러오는 중...</div>;
+  if (topRankers.length === 0) return <div className="text-sm text-muted-foreground bg-gray-50 p-4 rounded-lg">아직 랭킹이 없습니다. 첫 번째 주인공이 되어보세요!</div>;
 
   return (
-    <div className="bg-card/50 rounded-lg border border-border p-4 shadow-sm">
+    <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+        <span>🏆</span> 명예의 전당 <span>🏆</span>
+      </h3>
       <div className="space-y-3">
         {topRankers.map((ranker, index) => (
-          <div key={index} className="flex items-center justify-between p-2 rounded bg-background/50">
+          <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3">
-              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                index === 1 ? 'bg-gray-100 text-gray-700' :
-                  'bg-orange-100 text-orange-700'
+              <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shadow-sm ${index === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-white' :
+                index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' :
+                  'bg-gradient-to-br from-orange-300 to-orange-500 text-white'
                 }`}>
                 {index + 1}
               </div>
-              <span className="font-medium text-sm">{ranker.nickname}</span>
+              <span className="font-medium text-gray-700">{ranker.nickname}</span>
             </div>
-            <span className="text-sm font-bold text-primary">{ranker.score}점</span>
+            <div className="text-right">
+              <div className="text-sm font-bold text-gray-900">{ranker.score}문제</div>
+              <div className="text-xs text-gray-500">{ranker.max_streak}연속</div>
+            </div>
           </div>
         ))}
       </div>

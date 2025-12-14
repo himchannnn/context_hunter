@@ -4,21 +4,58 @@ import type { Question, VerifyResponse } from '../types';
 // In local dev, Vite proxy (vite.config.ts) should handle this, or we can use env var.
 export const API_BASE_URL = '/api';
 
-// 난이도별 문제 목록 가져오기
-export const fetchQuestions = async (difficulty: number): Promise<Question[]> => {
-  const response = await fetch(`${API_BASE_URL}/questions?difficulty=${difficulty}`);
+// 난이도별/분야별 문제 목록 가져오기
+export const fetchQuestions = async (difficulty: number, category?: string, limit: number = 10): Promise<Question[]> => {
+  let url = `${API_BASE_URL}/questions?difficulty=${difficulty}&limit=${limit}`;
+  if (category) {
+    url += `&category=${encodeURIComponent(category)}`;
+  }
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch questions');
   const data = await response.json();
   return data.questions;
 };
 
+export interface DailyProgress {
+  id: number;
+  user_id: number;
+  date: string;
+  cleared_domains: string;
+  reward_claimed: boolean;
+  credits_awarded?: number;
+}
+
+export const getDailyProgress = async (token: string | null, date: string): Promise<DailyProgress> => {
+  const headers: HeadersInit = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE_URL}/daily-progress?date=${date}`, { headers });
+  if (!response.ok) throw new Error('Failed to fetch daily progress');
+  return response.json();
+};
+
+export const updateDailyProgress = async (token: string | null, date: string, domain: string): Promise<DailyProgress> => {
+  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE_URL}/daily-progress`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ date, domain }),
+  });
+  if (!response.ok) throw new Error('Failed to update daily progress');
+  return response.json();
+};
+
 // 정답 확인 및 유사도 검사 요청
-export const verifyAnswer = async (questionId: string, userAnswer: string): Promise<VerifyResponse> => {
+// 정답 확인 및 유사도 검사 요청
+export const verifyAnswer = async (questionId: string, userAnswer: string, token: string | null = null): Promise<VerifyResponse> => {
+  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const response = await fetch(`${API_BASE_URL}/verify`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({ questionId, userAnswer }),
   });
   if (!response.ok) throw new Error('Failed to verify answer');
@@ -79,5 +116,61 @@ export const saveGuestbook = async (entry: { nickname: string; score: number; ma
 export const fetchRankings = async (): Promise<RankingEntry[]> => {
   const response = await fetch(`${API_BASE_URL}/rankings`);
   if (!response.ok) throw new Error('Failed to fetch rankings');
+  return response.json();
+};
+
+// 일일 보상 수령
+export const claimDailyReward = async (token: string) => {
+  const response = await fetch(`${API_BASE_URL}/daily/claim-reward`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to claim reward');
+  }
+  return response.json();
+};
+
+// 테마 구매
+export const buyTheme = async (token: string, themeId: string) => {
+  const response = await fetch(`${API_BASE_URL}/shop/buy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ theme_id: themeId }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to buy theme');
+  }
+  return response.json();
+};
+
+// 테마 장착
+export const equipTheme = async (token: string, themeId: string) => {
+  const response = await fetch(`${API_BASE_URL}/user/equip`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ theme_id: themeId }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to equip theme');
+  }
+  return response.json();
+};
+
+// 게스트 로그인
+export const guestLogin = async () => {
+  const response = await fetch(`${API_BASE_URL}/auth/guest`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Guest login failed');
   return response.json();
 };

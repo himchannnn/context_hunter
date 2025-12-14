@@ -1,44 +1,41 @@
-# 📋 변경 사항 요약 보고서 (2025-12-11)
+# Changes Summary
 
-최근 진행된 업데이트 내역을 상세히 정리한 문서입니다. 프론트엔드 기능 추가, 버그 수정, 백엔드 데이터 초기화 등 전반적인 개선이 이루어졌습니다.
+## 1. Authentication & User Flow (Optional Login)
+-   **Main Screen Default**: The application now opens directly to the Main Screen without requiring login.
+-   **Guest Mode**: Unauthenticated users can play "Daily Challenge" or "Infinite Challenge" immediately as a Guest.
+-   **Auth Modal**: Replaced full-page Login/Signup screens with a **Modal Overlay** (popup).
+    -   Accessible via the "User Icon" button in the top header.
+    -   Preserves the Main Screen context in the background.
+    -   **Back Button** behavior improved: "Back" from Signup returns to Login.
+-   **UI Compacted**: Login/Signup forms logic simplified and styled to fit the modal.
+-   **Bug Fix**: Fixed issue where Guest users could not start games (Backend schema update).
+-   **Bug Fix**: Fixed issue where Guest users could not see Result screens (Frontend logic update).
 
----
+## 2. Admin Account
+-   Created an admin account for testing:
+    -   **ID**: `admin`
+    -   **PW**: `admin1234`
+    -   **Credits**: `1,000,000` (Unlimited theme purchases)
 
-## 1. 🚀 게스트 로그인 개선 (Guest Logic Refactoring)
-*   **기존 문제:** 게스트 유저가 DB에 계속 쌓이는 문제 및 일반 유저와 데이터가 섞이는 우려가 있었습니다.
-*   **변경 내용:**
-    *   **휘발성 계정 전환:** 게스트 로그인 시 DB에 데이터를 저장하지 않고, 메모리 상에서만 존재하는 임시 유저(`id=-1`)로 처리하도록 로직을 변경했습니다.
-    *   **오답 노트 제한:** 게스트는 오답 노트 기능이 제공되지 않으며, 저장 시도를 해도 가짜 응답(Mock Response)을 반환하여 에러를 방지했습니다.
-    *   **랭킹 유지:** 게스트라도 닉네임을 통해 랭킹(Guestbook) 등록은 가능하도록 유지했습니다.
+## 3. Theme Visuals (Major Upgrade)
+Implemented dynamic, animated backgrounds for all themes in `ThemeBackground.tsx`.
 
-## 2. 🐛 로그인 직후 게임 화면 이동 버그 수정
-*   **증상:** 게스트 플레이 후 로그아웃하거나 재로그인했을 때, 메인 화면이 아닌 **이전 게임 진행 화면(문제 풀이 화면)**이 바로 뜨는 현상.
-*   **원인:** `App.tsx`에서 로그인 상태가 해제되어도 내부 게임 상태(`gameState`)가 초기화되지 않고 남아있었기 때문입니다.
-*   **해결:** 로그아웃 시(`!isAuthenticated`) 강제로 `gameState`를 `'main'`으로 초기화하는 코드를 추가하여, 로그인 시 항상 메인 메뉴부터 시작하도록 수정했습니다.
+### Nature Themes
+-   **Spring**: Falling pink flower petals (🌸) from top to bottom.
+-   **Summer**: **[Overhauled]** Radiant sun with rotating rays, 3 layers of realistic ocean waves fixed to the screen bottom, lens flare.
+-   **Autumn**: Falling maple leaves (🍁, 🍂) with wind sway effect.
+-   **Winter**: Detailed snowflakes (❄️) falling with rotation.
 
-## 3. 📜 푸터(Footer) 페이지 구현
-메인 화면 하단에 법적 고지 및 고객 지원 페이지를 추가하고 연결했습니다.
-*   **이용약관 (`TermsScreen`):** 서비스 이용 약관 내용 추가 (시행일 2025년 기준).
-*   **개인정보처리방침 (`PrivacyScreen`):** 개인정보 수집 및 처리 방침 추가 (2025년 기준).
-*   **문의하기 (`ContactScreen`):** 
-    *   사용자 입력 폼(이메일, 내용) 구현.
-    *   제출 시 성공 애니메이션 효과 추가.
-    *   고객센터 이메일: `spt_contexthunter@gachon.ac.kr`로 설정.
-    *   Copyright 연도를 **2025**년으로 업데이트.
+### Tech & Pattern Themes
+-   **Cyber**: **[Overhauled]** Vertical binary code rain (0/1) in dense columns, falling smoothly (Matrix style).
+-   **SF (Sci-Fi)**: **[Overhauled]** "Tron" style aesthetic. Moving perspective grid (flyover effect), vertical neon cyan lasers with strong glow shooting upwards.
+-   **Space**: Twinkling stars and nebula effect.
+-   **Animal**: Varied animal emojis (🐶, 🐱, etc.) floating with tilt. **[Refined]** Increased opacity and count for better visibility.
+-   **Fruit**: Varied fruit emojis (🍎, 🍇, etc.) floating with tilt. **[Refined]** Increased opacity and count.
 
-## 4. 🚪 게임 나가기(Exit) 기능 추가
-*   **기존 문제:** 게임 진행 중에 메인 메뉴로 돌아갈 방법이 없어 강제로 로그아웃하거나 새로고침해야 했습니다.
-*   **변경 내용:**
-    *   **나가기 버튼:** 게임 화면 좌측 상단에 나가기 아이콘 버튼 추가.
-    *   **확인 팝업:** 실수로 누르는 것을 방지하기 위해 "정말 종료하시겠습니까?" 팝업 구현.
-    *   **동작:** 확인 시 게임 기록을 초기화하고 메인 화면으로 안전하게 복귀.
+## 4. UI Refinements
+-   **Main Screen**: Removed "모드 선택" (Select Mode) text to provide a cleaner look for the theme backgrounds.
+-   **Watermark**: Removed static watermark in favor of the full-screen theme effects.
 
-## 5. 💾 초기 데이터 구축 (Database Seeding)
-*   **증상:** "Failed to fetch questions" 에러 발생. DB가 비어있고 AI 생성 기능이 지연되거나 설정 문제로 실패하여 문제가 표시되지 않음.
-*   **해결:** `seed_db.py` 스크립트 작성 및 실행.
-    *   **총 51개 문제** (속담, 명언, 관용구 등)를 DB에 미리 삽입.
-    *   이제 AI 연결 없이도 즉시 문제를 불러와 게임을 즐길 수 있습니다.
-
----
-**작성자:** Antigravity AI  
-**일자:** 2025년 12월 11일
+## 5. Cleanup
+-   Removed temporary verification scripts and log files.

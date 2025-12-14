@@ -16,6 +16,19 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    error_msg = f"Global Error: {str(exc)}\n{traceback.format_exc()}"
+    print(error_msg)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": error_msg},
+    )
+
 # JWT 설정
 # 실제 배포 시에는 SECRET_KEY를 환경 변수로 관리해야 합니다.
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-keep-it-secret") 
@@ -74,7 +87,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     # 게스트 유저 처리 (DB 조회 안 함)
     if username.startswith("guest_"):
         # 임시 유저 객체 생성 (id=-1)
-        return models.User(id=-1, username=username, is_guest=True, created_at=datetime.utcnow())
+        return models.User(
+            id=-1, 
+            username=username, 
+            is_guest=True, 
+            created_at=datetime.utcnow(),
+            credits=0,
+            owned_themes="default",
+            equipped_theme="default",
+            total_solved=0
+        )
 
     user = crud.get_user_by_username(db, username=username)
     if user is None:
@@ -88,7 +110,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    return crud.create_user(db=db, user=user)
+    try:
+        return crud.create_user(db=db, user=user)
+    except Exception as e:
+        print(f"Registration error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 # 로그인 (토큰 발급)
 @app.post("/api/auth/login", response_model=schemas.Token)
@@ -118,25 +146,78 @@ def guest_login(db: Session = Depends(get_db)):
 
 # 내 정보 조회
 @app.get("/api/users/me", response_model=schemas.UserResponse)
-def read_users_me(current_user: models.User = Depends(get_current_user)):
+def read_users_me(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Calculate daily progress count
+    if current_user.id != -1:
+        date = datetime.utcnow().strftime("%Y-%m-%d")
+        progress = crud.get_daily_progress(db, current_user.id, date)
+        if progress and progress.cleared_domains:
+            # Count non-empty domains
+            domains = [d for d in progress.cleared_domains.split(",") if d]
+            current_user.daily_progress_count = len(domains)
+        else:
+            current_user.daily_progress_count = 0
+    else:
+        current_user.daily_progress_count = 0
+            
     return current_user
 
 # 문제 조회 엔드포인트
 @app.get("/api/questions", response_model=schemas.QuestionsResponse)
-def read_questions(difficulty: int = 1, db: Session = Depends(get_db)):
+def read_questions(category: Optional[str] = None, difficulty: int = 1, limit: int = 10, db: Session = Depends(get_db)):
     try:
-        # print(f"DEBUG: read_questions called with difficulty {difficulty}") # Stdout logs are captured by Podman
-        questions = crud.get_questions_by_difficulty(db, difficulty)
+        # print(f"DEBUG: read_questions called with category {category}") 
+        questions = crud.get_questions(db, category, limit)
         return {"questions": questions}
     except Exception as e:
         print(f"ERROR in read_questions: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# 일일 진행 상황 조회
+@app.get("/api/daily-progress", response_model=schemas.DailyProgressResponse)
+def get_daily_progress(date: str, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 게스트는 로컬 관리 (혹은 빈 값 리턴)
+    if current_user.id == -1:
+         return {"date": date, "cleared_domains": "", "id": -1, "user_id": -1}
+    
+    progress = crud.get_daily_progress(db, current_user.id, date)
+    if not progress:
+        return {"date": date, "cleared_domains": "", "id": 0, "user_id": current_user.id}
+    return progress
+
+# 일일 진행 상황 업데이트 (클리어 시 호출)
+@app.post("/api/daily-progress", response_model=schemas.DailyProgressResponse)
+def update_daily_progress(update: schemas.DailyProgressUpdate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.id == -1:
+        # 게스트는 서버 저장 안 함
+        return {"date": update.date, "cleared_domains": update.domain, "id": -1, "user_id": -1}
+        
+    progress, is_new = crud.update_daily_progress(db, current_user.id, update.date, update.domain)
+    
+    credits_awarded = 0
+    if is_new:
+        current_user.credits += 10
+        db.commit()
+        credits_awarded = 10
+        
+    # Pydantic 모델 반환을 위해 dict로 변환하거나 ORM 객체에 속성 추가
+    # ORM 객체에 임시 속성 추가는 위험하므로 dict로 변환
+    return {
+        "id": progress.id,
+        "user_id": progress.user_id,
+        "date": progress.date,
+        "cleared_domains": progress.cleared_domains,
+        "reward_claimed": progress.reward_claimed,
+        "credits_awarded": credits_awarded
+    }
+
+
 # 정답 확인 엔드포인트
 @app.post("/api/verify", response_model=schemas.VerifyAnswerResponse)
-def verify_answer(request: schemas.VerifyAnswerRequest, db: Session = Depends(get_db)):
+def verify_answer(request: schemas.VerifyAnswerRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     # 참고: 인증된 사용자의 경우 시도 기록을 사용자와 연결할 수 있습니다.
-    result = crud.verify_answer(db, request.questionId, request.userAnswer)
+    # user_id 전달하여 통계 업데이트
+    result = crud.verify_answer(db, request.questionId, request.userAnswer, current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Question not found")
     return result
@@ -181,6 +262,51 @@ def read_notes(current_user: models.User = Depends(get_current_user), db: Sessio
     if current_user.id == -1:
         return []
     return crud.get_user_notes(db, current_user.id)
+
+
+
+# 12-12 추가: 상점 구매
+@app.post("/api/shop/buy")
+def buy_theme(request: schemas.ShopPurchaseRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.id == -1:
+         raise HTTPException(status_code=400, detail="Guest cannot buy themes")
+         
+    THEME_PRICE = 100
+    theme_id = request.theme_id
+    
+    # Check credits
+    if current_user.credits < THEME_PRICE:
+        raise HTTPException(status_code=400, detail="Not enough credits")
+        
+    # Check if already owned
+    owned_list = current_user.owned_themes.split(",") if current_user.owned_themes else []
+    if theme_id in owned_list:
+        raise HTTPException(status_code=400, detail="Theme already owned")
+        
+    # Deduct credits and add theme
+    current_user.credits -= THEME_PRICE
+    owned_list.append(theme_id)
+    current_user.owned_themes = ",".join(owned_list)
+    db.commit()
+    
+    return {"message": f"Purchased {theme_id}", "credits": current_user.credits, "owned_themes": current_user.owned_themes}
+
+# 12-12 추가: 테마 장착
+@app.post("/api/user/equip")
+def equip_theme(request: schemas.ThemeEquipRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.id == -1:
+         raise HTTPException(status_code=400, detail="Guest cannot equip themes")
+         
+    theme_id = request.theme_id
+    owned_list = current_user.owned_themes.split(",") if current_user.owned_themes else []
+    
+    if theme_id not in owned_list and theme_id != 'default':
+        raise HTTPException(status_code=400, detail="Theme not owned")
+        
+    current_user.equipped_theme = theme_id
+    db.commit()
+    
+    return {"message": f"Equipped {theme_id}", "equipped_theme": current_user.equipped_theme}
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
