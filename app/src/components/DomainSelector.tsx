@@ -46,7 +46,7 @@ export default function DomainSelector({ onSelectDomain, onBack, clearedDomains 
                         <button
                             key={domain.id}
                             onClick={() => onSelectDomain(domain.id)}
-                            onClick={() => onSelectDomain(domain.id)}
+
                             // disabled={isCleared} // Remove disabled to allow replay
                             className={`
                 relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl

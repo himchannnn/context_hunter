@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Palette, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Palette, ArrowLeft, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { equipTheme } from '../lib/api';
 import { THEMES } from './ShopScreen'; // Reuse definitions

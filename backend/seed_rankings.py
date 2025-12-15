@@ -21,8 +21,12 @@ def seed_rankings():
             "ReaderClub", "GrammarNazi", "VocaHero", "SentenceBuilder", "StoryTeller"
         ]
         
-        entries = []
         for i, nickname in enumerate(nicknames):
+            # 중복 확인
+            existing = db.query(models.Guestbook).filter(models.Guestbook.nickname == nickname).first()
+            if existing:
+                continue
+
             # 점수와 스트릭 랜덤 생성 (상위권일수록 높게)
             base_score = random.randint(5, 50)
             score = base_score + (20 - i) * 2  # 순서대로 좀 더 높은 점수 부여 경향
@@ -45,7 +49,12 @@ def seed_rankings():
             entries.append(entry)
             
         # 데이터베이스에 추가
-        db.add_all(entries)
+        if entries:
+            db.add_all(entries)
+            db.commit()
+            print(f"Successfully added {len(entries)} ranking entries!")
+        else:
+            print("No new ranking entries added (all nicknames exist).")
         db.commit()
         
         print(f"Successfully added {len(entries)} ranking entries!")

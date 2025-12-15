@@ -19,17 +19,14 @@ import ShopScreen, { THEMES } from './components/ShopScreen';
 import ThemeScreen from './components/ThemeScreen';
 import ThemeBackground from './components/ThemeBackground';
 import UserProfileModal from './components/UserProfileModal';
-import { LogOut, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 const getThemeClass = (themeId: string) => {
   const theme = THEMES.find(t => t.id === themeId);
   return theme ? theme.bgClass : 'bg-white';
 };
 
-const getThemeIcon = (themeId: string) => {
-  const theme = THEMES.find(t => t.id === themeId);
-  return theme ? theme.icon : null;
-};
+
 
 function AppContent() {
   const { isAuthenticated, isLoading, logout, user, login } = useAuth();
@@ -155,17 +152,7 @@ function AppContent() {
   };
 
   // Render logic helpers
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return { icon: '🥇', style: 'from-yellow-300 to-yellow-500 shadow-yellow-500/50' };
-    if (rank === 2) return { icon: '🥈', style: 'from-slate-300 to-slate-500 shadow-slate-500/50' };
-    if (rank === 3) return { icon: '🥉', style: 'from-orange-300 to-orange-500 shadow-orange-500/50' };
-    if (rank <= 5) return { icon: '🏅', style: 'from-blue-400 to-indigo-500 shadow-blue-500/50' };
-    if (rank <= 10) return { icon: '🎖️', style: 'from-purple-400 to-pink-500 shadow-purple-500/50' };
-    if (rank <= 20) return { icon: '💠', style: 'from-cyan-400 to-blue-500 shadow-cyan-500/50' };
-    if (rank <= 50) return { icon: '✨', style: 'from-emerald-400 to-teal-500 shadow-emerald-500/50' };
-    if (rank <= 100) return { icon: '🎗️', style: 'from-rose-400 to-red-500 shadow-rose-500/50' };
-    return null;
-  };
+
 
   // Rendering
   if (isLoading) {
@@ -178,7 +165,7 @@ function AppContent() {
     ? getThemeClass(user.equipped_theme)
     : 'bg-white';
 
-  const rankBadge = userRank ? getRankBadge(userRank) : null;
+
 
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-4 relative transition-colors duration-500 bg-cover bg-center ${themeClass}`}>

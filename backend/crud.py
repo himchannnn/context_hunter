@@ -44,14 +44,41 @@ def get_questions(db: Session, category: str = None, limit: int = 5):
         needed = limit - len(questions)
         logger.info(f"Not enough questions. Generating {needed} new questions using AI...")
         
-        # 임시: AI 생성은 현재 구조상 'context'가 필요하므로 일단 스킵하거나
-        # 기존 로직을 살려야 하지만, 여기서는 DB에 있는 것만 우선시함.
-        # 실제로는 여기서 AI 호출하여 문제 생성 후 저장하는 로직이 필요함.
-        # 이번 변경에서는 AI 생성보다 DB 조회 위주로 변경.
-    
+        for _ in range(needed):
+            # 카테고리가 없으면 'general' 또는 랜덤 선택
+            target_category = category if category else "General"
+            
+            # AI 호출
+            ai_data = generate_question(category=target_category, difficulty=1)
+            
+            if "error" in ai_data:
+                logger.error(f"AI Generation Error: {ai_data['error']}")
+                continue
+                
+            # DB 저장
+            try:
+                new_question = models.Question(
+                    id=str(uuid.uuid4()),  # Generate explicit ID
+                    encoded_text=ai_data.get("encoded_sentence", "Error"),
+                    original_text=ai_data.get("original_sentence", "Unknown"),
+                    correct_meaning=ai_data.get("original_meaning", "Error"),
+                    category=ai_data.get("category", target_category),
+                    difficulty=ai_data.get("difficulty_level", 1),
+                    correct_count=0,
+                    total_attempts=0
+                )
+                db.add(new_question)
+                db.commit()
+                db.refresh(new_question)
+                
+                questions.append(new_question)
+            except Exception as e:
+                 logger.error(f"Failed to save AI question: {e}")
+                 db.rollback()
+
     return [
         {
-            "id": q.id, 
+            "id": str(q.id), # UUID to string
             "encoded": q.encoded_text, 
             "correct_meaning": q.correct_meaning,
             "category": q.category,

@@ -1,44 +1,65 @@
 version: '3.8'
 
 services:
-  db:
-    image: mariadb:10.6
+  ollama:
+    container_name: context-ollama
+    image: ollama/ollama:latest
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: context_hunter
-      MYSQL_USER: hunter_user
-      MYSQL_PASSWORD: your_secure_password
-    volumes:
-      - db_data:/var/lib/mysql
+    ports:
+      - "11434:11434" # Exposed to host for backend access (host network)
+
     networks:
       - app-network
+    environment:
+      - OLLAMA_KEEP_ALIVE=2m
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/nvidia:/usr/lib64/nvidia:/usr/lib64:$LD_LIBRARY_PATH
+    volumes:
+      - ollama_data:/root/.ollama
+      - /usr/lib64:/usr/lib64:ro # Mount host libs for RHEL/CentOS
+      - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro # Optional verification
+    # Direct GPU Mapping (Manual NVIDIA Device Pass-through)
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidia1:/dev/nvidia1
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+    security_opt:
+      - label=disable # Required for Podman to access devices with SELinux
 
   backend:
+    container_name: context-backend
     build: ./backend
     restart: always
+    network_mode: "host" # Use host network to access DB as 'localhost'
+    command: uvicorn main:app --host 0.0.0.0 --port 64039 # Avoid port 8000 conflict
     depends_on:
-      - db
+      - ollama
     environment:
-      DATABASE_URL: mysql+pymysql://hunter_user:your_secure_password@db/context_hunter
-      AI_API_KEY: ${AI_API_KEY}
-      AI_BASE_URL: ${AI_BASE_URL}
-      AI_MODEL_NAME: ${AI_MODEL_NAME:-llama-3.1-8b-instant}
-    networks:
-      - app-network
+      DATABASE_URL: mysql+pymysql://dbid253:dbpass253@127.0.0.1/db25339?charset=utf8mb4
+      AI_API_KEY: ${AI_API_KEY:-ollama}
+      AI_BASE_URL: http://127.0.0.1:11434/v1
+      AI_MODEL_NAME: ${AI_MODEL_NAME:-qwen2.5:7b}
 
   frontend:
+    container_name: context-frontend
     build: ./app
     restart: always
     ports:
       - "65039:80"
+    extra_hosts:
+      - "host.containers.internal:host-gateway" # Allow access to backend on host net
     depends_on:
       - backend
     networks:
       - app-network
 
 volumes:
-  db_data:
+
+  ollama_data:
 
 
 networks:

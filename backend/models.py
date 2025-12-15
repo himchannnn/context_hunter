@@ -2,35 +2,14 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, T
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
-
-# 혼동하기 쉬운 단어 모델 (현재 사용되지 않을 수 있음)
-class ConfusingWord(Base):
-    __tablename__ = "confusing_words"
-
-    id = Column(Integer, primary_key=True, index=True)
-    word = Column(String(100), nullable=False) # 예: "낳다"
-    meaning = Column(String(255), nullable=False) # 예: "배 속의 아이를 밖으로 내놓다"
-    difficulty = Column(Integer, default=1)
-
-    questions = relationship("Question", back_populates="word")
-
-# 문맥 문장 모델 (현재 사용되지 않을 수 있음)
-class ContextSentence(Base):
-    __tablename__ = "context_sentences"
-
-    id = Column(Integer, primary_key=True, index=True)
-    sentence_text = Column(Text, nullable=False) # 예: "그녀는 건강한 아기를 ___."
-    difficulty = Column(Integer, default=1)
-
-    questions = relationship("Question", back_populates="context")
+import uuid
 
 # 문제 모델: 실제 게임에서 사용되는 문제 데이터
 class Question(Base):
     __tablename__ = "questions"
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
 
-    id = Column(String(50), primary_key=True, index=True) # 예: "q1_1"
-    word_id = Column(Integer, ForeignKey("confusing_words.id"), nullable=True)
-    context_id = Column(Integer, ForeignKey("context_sentences.id"), nullable=True)
+    id = Column(String(50), primary_key=True, index=True, default=lambda: str(uuid.uuid4())) # 예: "q1_1"
     
     encoded_text = Column(Text, nullable=False) # 사용자에게 보여지는 암호화/변형된 문장
     original_text = Column(Text, nullable=False) # 원본 문장 (참고용)
@@ -38,8 +17,6 @@ class Question(Base):
     difficulty = Column(Integer, default=1) # 난이도 (1: 청년, 2: 중장년, 3: 노년)
     category = Column(String(50), default="general") # 분야 (politics, economy, society, culture, it, world)
 
-    word = relationship("ConfusingWord", back_populates="questions")
-    context = relationship("ContextSentence", back_populates="questions")
     attempts = relationship("Attempt", back_populates="question")
 
     correct_count = Column(Integer, default=0) # 정답 횟수
@@ -59,6 +36,7 @@ class Question(Base):
 # 사용자 모델
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=True) # 사용자 ID (게스트는 Null 가능)
@@ -75,6 +53,7 @@ class User(Base):
 # 오답 노트 모델: 사용자가 저장한 틀린 문제
 class WrongAnswerNote(Base):
     __tablename__ = "wrong_answer_notes"
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
@@ -88,6 +67,7 @@ class WrongAnswerNote(Base):
 # 시도 기록 모델: 모든 문제 풀이 로그 (분석용)
 class Attempt(Base):
     __tablename__ = "attempts"
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
 
     id = Column(Integer, primary_key=True, index=True)
     question_id = Column(String(50), ForeignKey("questions.id"))
@@ -101,6 +81,7 @@ class Attempt(Base):
 # 방명록(랭킹) 모델: 도전 모드 결과 저장
 class Guestbook(Base):
     __tablename__ = "guestbook"
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
 
     id = Column(Integer, primary_key=True, index=True)
     nickname = Column(String(50), unique=True, index=True, nullable=False) # 랭킹에 표시될 닉네임
@@ -112,6 +93,7 @@ class Guestbook(Base):
 # 일일 모드 진행 상황 모델
 class DailyProgress(Base):
     __tablename__ = "daily_progress"
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # 로그인 유저 (게스트는 로컬스토리지 관리라 DB 저장 안함)

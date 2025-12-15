@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShoppingBag, ArrowLeft, Coins, Lock, Check } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingBag, ArrowLeft, Coins, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { buyTheme } from '../lib/api';
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+
 
 interface ThemeBackgroundProps {
     themeId: string;
