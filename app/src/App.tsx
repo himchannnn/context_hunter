@@ -170,7 +170,7 @@ function AppContent() {
   return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-4 relative transition-colors duration-500 bg-cover bg-center ${themeClass}`}>
       {/* Header / User Info */}
-      <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
+      <div className="absolute top-4 right-4 flex items-center gap-3 z-50">
         {isAuthenticated ? (
           <>
             <button

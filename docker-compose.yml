@@ -49,9 +49,7 @@ services:
     build: ./app
     restart: always
     ports:
-      - "65039:80"
-    extra_hosts:
-      - "host.containers.internal:host-gateway" # Allow access to backend on host net
+      - "65039:3000"
     depends_on:
       - backend
     networks:

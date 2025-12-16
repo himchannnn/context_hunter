@@ -104,7 +104,7 @@ export default function ChallengeResultScreen({
   };
 
   return (
-    <div className="max-w-2xl w-full space-y-8 px-4">
+    <div className="max-w-2xl w-full mx-auto space-y-8 px-4">
       {/* 결과 요약 섹션 */}
       <div className="text-center space-y-4">
         <h2 className="text-xl md:text-2xl text-foreground">도전 모드 결과</h2>

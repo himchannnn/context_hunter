@@ -27,7 +27,7 @@ import random
 import uuid
 
 # 문제 조회 함수 (분야별/난이도별)
-def get_questions(db: Session, category: str = None, limit: int = 5):
+def get_questions(db: Session, category: str = None, limit: int = 5, allow_generation: bool = True):
     query = db.query(models.Question)
     
     if category and category != "random":
@@ -39,8 +39,8 @@ def get_questions(db: Session, category: str = None, limit: int = 5):
     
     logger.info(f"Fetched {len(questions)} questions for category {category}")
 
-    # 문제가 부족하면 AI로 생성 (자동 채우기)
-    if len(questions) < limit:
+    # 문제가 부족하면 AI로 생성 (자동 채우기) - allow_generation이 True일 때만
+    if allow_generation and len(questions) < limit:
         needed = limit - len(questions)
         logger.info(f"Not enough questions. Generating {needed} new questions using AI...")
         
@@ -97,6 +97,16 @@ def verify_answer(db: Session, question_id: str, user_answer: str, user_id: int 
         if not question:
             logger.error(f"verify_answer: Question {question_id} not found")
             return None
+            
+        # 1. 보여지는 문장(문제)과 동일한 경우 정답 처리 금지 (Copy & Paste 방지)
+        # 띄어쓰기 무시하고 비교
+        if user_answer.replace(" ", "") == question.encoded_text.replace(" ", ""):
+            return schemas.VerifyAnswerResponse(
+                isCorrect=False,
+                similarity=0.0,
+                correctAnswer=None, # 정답을 바로 보여주지 않음 (혹은 정책에 따라 변경 가능)
+                feedback="제시된 문장을 그대로 입력하셨습니다. 문장의 의미를 자신의 말로 풀어서 설명해주세요."
+            )
         
         # AI를 이용한 유사도 판별 호출
         # check_similarity 함수 내부에서 모델 로드 실패 시 적절한 에러 메시지를 반환하도록 처리되어 있음

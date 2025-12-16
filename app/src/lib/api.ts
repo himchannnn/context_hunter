@@ -1,12 +1,12 @@
 import type { Question, VerifyResponse } from '../types';
 
-// In production (behind Nginx), we use relative path to let Nginx proxy to backend.
-// In local dev, Vite proxy (vite.config.ts) should handle this, or we can use env var.
-export const API_BASE_URL = '/api';
+// In production (without Nginx proxy), we access backend directly.
+// This assumes the browser can reach this URL.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:64039/api';
 
 // 난이도별/분야별 문제 목록 가져오기
-export const fetchQuestions = async (difficulty: number, category?: string, limit: number = 10): Promise<Question[]> => {
-  let url = `${API_BASE_URL}/questions?difficulty=${difficulty}&limit=${limit}`;
+export const fetchQuestions = async (difficulty: number, category?: string, limit: number = 10, allowGeneration: boolean = true): Promise<Question[]> => {
+  let url = `${API_BASE_URL}/questions?difficulty=${difficulty}&limit=${limit}&allow_generation=${allowGeneration}`;
   if (category) {
     url += `&category=${encodeURIComponent(category)}`;
   }

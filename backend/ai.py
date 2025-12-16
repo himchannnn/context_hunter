@@ -3,6 +3,7 @@ import json
 from typing import Dict, Any, Optional
 from typing import Dict, Any, Optional
 from openai import OpenAI
+import random
 
 # 환경 변수 로드 (main.py에서 load_dotenv가 호출되므로 여기서는 os.getenv 사용 가능)
 # 하지만 안전을 위해 여기서도 호출하거나, main.py가 먼저 실행됨을 가정합니다.
@@ -25,6 +26,44 @@ class AIClient:
             base_url=self.base_url
         )
 
+# 사전에 정의된 고난이도 어휘 데이터베이스 (다양성 확보용)
+    # 사전에 정의된 고난이도 어휘 데이터베이스 (다양성 확보용)
+    WORD_DATABASE = {
+        "Politics": [
+            "재가", "반증", "쇄신", "파행", "교착", "경질", "추대", "입김", "야합", "독단", 
+            "정쟁", "표결", "법안", "상정", "부결", "가결", "산회", "속개", "의결", "비준",
+            "계류", "면책", "불체포", "탄핵", "국면", "전환", "타개", "병폐", "청산", "공천"
+        ],
+        "Economy": [
+            "긴축", "부양", "변제", "탕감", "상계", "차익", "보합", "급락", "급등", "호가", 
+            "공시", "상장", "부도", "채무", "융통", "교부", "조세", "징수", "체납", "포탈",
+            "낙수효과", "펀더멘털", "유동성", "재정", "적자", "흑자", "수지", "금리", "환율", "물가"
+        ],
+        "IT": [
+            "도래", "혁신", "사문화", "종속", "가속화", "태동", "과도기", "범용", "호환", "격차", 
+            "편중", "난제", "알고리즘", "매커니즘", "인프라", "구축", "선점", "우위", "특이점", "가상",
+            "보안", "취약점", "암호화", "복호화", "대역폭", "지연", "생태계", "플랫폼", "인터페이스", "직관적"
+        ],
+        "Society": [
+            "심심한", "금일", "사흘", "낭설", "위화감", "족보", "식상하다", "작위적", "천편일률", "목도", 
+            "도외시", "야기", "간과", "주지", "기인", "결부", "만연", "팽배", "조장", "방관",
+            "경각심", "불감증", "양극화", "소외", "배제", "포용", "공존", "상생", "갈등", "봉합"
+        ],
+        "Culture": [
+            "향유", "영위", "귀감", "반향", "조명", "각색", "오마주", "모티프", "정체성", "다양성",
+            "보편성", "특수성", "심미적", "서사", "담론", "비평", "사조", "풍미", "전유", "향수"
+        ],
+        "History": [
+            "격변", "사료", "고증", "왜곡", "기술", "편찬", "계승", "유추", "반면교사", "타산지석",
+            "흥망성쇠", "기원", "발상지", "유래", "전철", "답습", "청산", "굴곡", "질곡", "태평성대"
+        ],
+        "General": [
+            "고지식", "기락", "갈무리", "유명세", "일가견", "취지", "단초", "빌미", "여지", "개연성", 
+            "타당성", "실효성", "가시화", "구체화", "형해화", "사문화", "유야무야", "지지부진", "전무후무", "미봉책",
+            "임시방편", "궁여지책", "속수무책", "자포자기", "자가당착", "모순", "역설", "아이러니", "딜레마", "트리거"
+        ]
+    }
+
     def generate_question(self, category: str, difficulty: int = 1) -> Dict[str, Any]:
         """
         Llama 3.1 8b를 사용하여 특정 주제의 문제를 생성합니다.
@@ -42,44 +81,52 @@ class AIClient:
         else:
             difficulty_guide = "Complex sentence, abstract concepts, advanced vocabulary."
 
+        # Select a target word from the database
+        target_list = self.WORD_DATABASE.get(category, self.WORD_DATABASE["General"] + self.WORD_DATABASE["Society"])
+        # If category words run out or valid key not found, fallback to combined list
+        if not target_list:
+             target_list = self.WORD_DATABASE["General"]
+        
+        selected_word = random.choice(target_list)
+
         prompt = f"""
         You are a generic puzzle generator for a game called "Context Hunter".
         
         [Goal]
-        Help users improve their literacy by learning difficult or often misunderstood Korean vocabulary through context.
+        Create a **high-difficulty** Korean vocabulary puzzle where the context is obscure and the target word is sophisticated.
         
         [Task]
-        1. **Select a Target Word**: Choose a "Literacy-Challenging" Korean word.
-           - Examples: "심심한"(profound), "금일"(today), "사흘"(3 days), "고지식"(stubborn), "낭설"(false rumor), "위화감", "기락", "족보", "식상하다", "반증", "재가", "피력", "갈무리", "유명세", "일가견".
-           - **IMPORTANT**: Do NOT be limited to these examples. Choose ANY word that requires high literacy to understand correctly.
-           - **CRITICAL**: Do NOT use the same word repeatedly. Be diverse.
+        1. **Target Word**: "{selected_word}"
+           - You MUST use this exact word.
         
-        2. **Contextualize to Category**: The sentence MUST be about the category: "{category}".
-           - If category is "Politics", use words like "재가", "반증" in a political context.
-           - If category is "Economy", use words like "기락", "갈무리" in an economic context.
-           - If category is "IT", use words like "일가견", "유명세" in a tech context.
+        2. **Context**: Category "{category}".
+           - Use a **Metaphorical, Archaic, or Highly Abstract** tone (e.g., Editorial, Philosophy, Classicizing).
+           - The sentence should feel "difficult" to a native speaker (JLPT N1 / GRE level).
+           - Do NOT make it a simple description. Make it a thought-provoking statement.
 
-        3. **Create Sentence**: Write a **News Headline, Formal Editorial, or Social Commentary** sentence containing the word.
-           - The sentence should be sophisticated and "grown-up" (News style).
+        3. **Create Sentence**: 
+           - Write a sentence where "{selected_word}" is the pivot of the meaning.
+           - Example style: "작위적인 평온함은 겉으로는 고요하나, 실상은 위태로운 살얼음판과 같다." (Sophisticated).
            
-        4. **Model Answer**: The `original_meaning` MUST be a **Model Answer** (모범 답안).
-           - Do NOT just define the word.
-           - **Paraphrase** the entire sentence into easier, plain Korean.
-           - Explain the "Contextual Intent" of the sentence.
-           - Example: If sentence is "작위적인 해석은 반감을 산다", Model Answer should be "억지로 꾸며낸 듯한 해석은 사람들에게 거부감을 줄 수 있다는 뜻입니다."
+        4. **Model Answer (CRITICAL)**: 
+           - The `original_meaning` MUST be a **Direct Paraphrase** using **ONLY SIMPLE, EVERYDAY KOREAN**.
+           - **CONSTRAINT**: Do NOT use the same key verbs/adjectives as the `encoded_sentence`. **Change the vocabulary entirely.**
+           - If `encoded_sentence` uses "작위적" (artificial), `original_meaning` MUST use "억지로 꾸며낸" (forced/fake), NOT "인위적" (which is still hard).
+           - Structure: Exact parallel to the encoded sentence, just easier words.
+           - **NO EXPLANATION**: Do not say "This means...". Just the translated sentence.
 
         [Constraints]
-        1. **LANGUAGE**: All content MUST be in **Standard Korean**.
-        2. **NO ENGLISH/FOREIGN**: Do not use English, Cyrillic, Chinese, or any other non-Korean scripts.
-        3. **NO SCRAMBLING**: Do NOT scramble words. Do NOT create "puzzles" by mixing syllables. Write **NORMAL** sentences.
-        4. **NO NONSENSE**: Do NOT invent words. Use dictionary-defined words only.
+        1. **DIFFICULTY**: The `encoded_sentence` must be challenging. Use metaphors (은유), idioms (관용구), or advanced grammar.
+        2. **SEPARATION**: `encoded_sentence` = Hard/Abstract words. `original_meaning` = Easy/Concrete words.
+        3. **NO OPPOSITE**: Ensure the meaning is exactly the same, not the opposite.
+        4. **NO NONSENSE**: Standard Korean only. No scrambled text.
 
         [Output Format]
         Return JSON only:
         {{
-            "original_sentence": "작위적 (The Target Word Only)",
-            "encoded_sentence": "작위적인 해석은 오히려 대중의 반감을 살 수 있다는 지적이 나온다. (Full Sentence)",
-            "original_meaning": "억지로 꾸며낸 듯한 해석은 대중들에게 거부감을 줄 수 있다는 뜻입니다. (Model Answer)",
+            "original_sentence": "{selected_word}",
+            "encoded_sentence": "...hard sentence with {selected_word}...",
+            "original_meaning": "...same sentence in plain Korean...",
             "difficulty_level": {difficulty},
             "category": "{category}"
         }}
@@ -126,6 +173,14 @@ class AIClient:
                 "feedback": "AI 클라이언트 초기화 실패"
             }
 
+        # Check for meaningless input BEFORE calling AI to save resources and ensure strictness
+        if self._is_nonsense_input(user_answer):
+             return {
+                "similarity_score": 0,
+                "is_correct": False,
+                "feedback": "의미 있는 답변을 입력해주세요."
+            }
+
         prompt = f"""
         Compare the meaning of the two sentences below.
         
@@ -139,23 +194,30 @@ class AIClient:
         - Paraphrasing, synonyms, and different sentence structures that convey the same message should receive high scores (80-100).
         - "배가 고프다" (hungry) and "식사를 하고 싶다" (want to eat) are contextually similar enough to be correct.
         - Only mark as 0-49 if the meaning is truly unrelated or opposite.
+        - **IMPORTANT**: If the User Answer is just punctuation (e.g. ".", "?", "!") or a single meaningless character, score it as 0.
         
         [Scoring Guidelines]
         - 100: Perfect match or perfect paraphrase.
         - 80-99: Core meaning is the same, but slightly different tone or word choice.
         - 50-79: Partially correct, captures part of the meaning but misses nuance.
-        - 0-49: Incorrect meaning, irrelevant, or opposite.
+        - 0-49: Incorrect meaning, irrelevant, opposite, or meaningless punctuation like ".".
         
         [Decision Rule]
         - is_correct: true if similarity_score >= 50
         - is_correct: false if similarity_score < 50
         
+        [Output Format]
         Return JSON only:
         {{
             "is_correct": boolean,
             "similarity_score": integer (0-100),
             "feedback": "Short feedback in Korean (1 sentence)"
         }}
+
+        **IMPORTANT SCORING RULE**:
+        - Do NOT round to the nearest 5 or 10. Use precise numbers like 87, 92, 73, 64.
+        - If it is almost perfect but slightly off, use high 90s (e.g., 96, 98).
+        - If it is clearly wrong but has one correct word, use low numbers (e.g., 12, 23).
         """
 
         try:
@@ -173,8 +235,14 @@ class AIClient:
             # Pre-sanitize raw string
             content = self._sanitize_string(content)
             data = json.loads(content)
-            # Post-sanitize parsed object
-            return self._recursive_sanitize(data)
+            data = self._recursive_sanitize(data)
+            
+            # Force consistency: If score >= 50, is_correct MUST be True
+            if "similarity_score" in data:
+                score = int(data["similarity_score"])
+                data["is_correct"] = score >= 50
+                
+            return data
         except Exception as e:
             print(f"Error checking similarity: {e}")
             return {
@@ -198,10 +266,16 @@ class AIClient:
         {json.dumps(question_data, ensure_ascii=False)}
 
         [Checklist]
-        1. **Grammar & Sense**: Is `encoded_sentence` a PERFECT Korean sentence? (If it looks scrambled like "어럹약", REWRITE it completely).
-        2. **Script Check**: Does it contain any Cyrillic, English, or non-Korean characters? (If yes, REMOVE them).
-        3. **Target Word**: Does `original_sentence` contain ONLY the target word?
-        4. **Model Answer**: Is `original_meaning` a clear, helpful paraphrase?
+        1. **Grammar & Sense**: Is `encoded_sentence` a PERFECT, logical Korean sentence? (If strictly nonsense, REWRITE it).
+        2. **Difficulty Check**: Is `encoded_sentence` sophisticated enough? (If too simple, make it more formal/metaphorical).
+        3. **Vocabulary Distinction**: Does `original_meaning` use **DIFFERENT** words from `encoded_sentence`? 
+           - *Bad*: Encoded="교착 상태", Meaning="교착된 상태" (Too similar).
+           - *Good*: Encoded="교착 상태", Meaning="꼼짝달싹 못하는 상태".
+           - **Fix**: Rewrite meaning to use purely native/easy Korean.
+        4. **Opposite Check**: Does the meaning accidentally say the opposite? (e.g., "Good" vs "Not Good"). Fix it to match exactly.
+        5. **No Chinese/Foreign Script**: Does `original_meaning` or `encoded_sentence` contain **Chinese characters (Hanja)**? 
+           - **REMOVE** all Hanja (e.g., "亐", "下"). Use **ONLY Hangul**.
+           - Even if the word is difficult, write it in Hangul.
 
         [Action]
         - If PERFECT: Return the input JSON exactly as is.
@@ -260,6 +334,22 @@ class AIClient:
             return self._sanitize_string(data)
         else:
             return data
+            
+    def _is_nonsense_input(self, text: str) -> bool:
+        """
+        Check if the input is trivial (too short or just punctuation/symbols).
+        """
+        import re
+        if not text:
+            return True
+        # remove spaces
+        text = text.strip()
+        if len(text) < 2: # Single character answers are likely invalid for sentence similarity
+            return True
+        # Check if it contains only punctuation/symbols
+        if re.match(r'^[\W_]+$', text):
+             return True
+        return False
 
 # 싱글톤 인스턴스 생성
 ai_client = AIClient()

@@ -164,10 +164,10 @@ def read_users_me(current_user: models.User = Depends(get_current_user), db: Ses
 
 # 문제 조회 엔드포인트
 @app.get("/api/questions", response_model=schemas.QuestionsResponse)
-def read_questions(category: Optional[str] = None, difficulty: int = 1, limit: int = 10, db: Session = Depends(get_db)):
+def read_questions(category: Optional[str] = None, difficulty: int = 1, limit: int = 10, allow_generation: bool = True, db: Session = Depends(get_db)):
     try:
         # print(f"DEBUG: read_questions called with category {category}") 
-        questions = crud.get_questions(db, category, limit)
+        questions = crud.get_questions(db, category, limit, allow_generation=allow_generation)
         return {"questions": questions}
     except Exception as e:
         print(f"ERROR in read_questions: {str(e)}")

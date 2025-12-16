@@ -17,8 +17,7 @@ AI 기능(검증 로직 등)은 다른 모듈로 대체될 수 있도록 설계�
 ```
 Context_Hunter_WLogin/
 ├── app/                # Frontend (React)
-│   ├── Dockerfile      # Frontend 빌드 및 Nginx 설정
-│   └── nginx.conf      # Nginx 리버스 프록시 설정
+│   └── Dockerfile      # Frontend 빌드 및 serve 실행 (Port 3000)
 ├── backend/            # Backend (FastAPI)
 │   ├── Dockerfile      # Backend Python 환경 설정
 │   └── ...
@@ -124,11 +123,11 @@ cd app
 podman build -t context-frontend .
 cd ..
 
-# 2. 컨테이너 실행 (80 포트 개방)
+# 2. 컨테이너 실행 (외부 80 포트 -> 내부 3000 포트)
 podman run -d \
   --name frontend \
   --network app-network \
-  -p 80:80 \
+  -p 80:3000 \
   context-frontend
 ```
 

@@ -78,7 +78,7 @@ export default function DailyResultScreen({ results, onRetry, onHome }: DailyRes
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-6">
+    <div className="max-w-2xl w-full mx-auto p-4 md:p-6">
       {/* 결과 요약 카드 */}
       <div className="bg-card rounded-xl shadow-lg p-6 md:p-8 mb-8 text-center border border-border">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">오늘의 학습 결과</h2>

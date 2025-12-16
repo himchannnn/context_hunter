@@ -79,8 +79,7 @@ try:
                 encoded_text=q["encoded_text"],
                 original_text=q["original_text"],
                 correct_meaning=q["correct_meaning"],
-                difficulty=q["difficulty"],
-                category=q.get("category", "General") # Add category
+                difficulty=q["difficulty"]
             )
             db.add(db_q)
             count += 1

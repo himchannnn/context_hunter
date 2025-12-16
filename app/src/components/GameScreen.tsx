@@ -44,9 +44,18 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
         const targetCategory = gameMode === 'daily' ? domain : 'random';
         // 일일 모드는 5문제만 가져오면 됨
         const limit = gameMode === 'daily' ? 5 : 10;
+        // 도전 모드는 DB 질문 소진 시 종료 (새 질문 생성 안 함)
+        const allowGeneration = gameMode !== 'challenge';
 
-        const fetchedQuestions = await fetchQuestions(difficulty, targetCategory, limit);
+        const fetchedQuestions = await fetchQuestions(difficulty, targetCategory, limit, allowGeneration);
+
         if (fetchedQuestions.length === 0) {
+          if (gameMode === 'challenge') {
+            // 이미 모든 문제를 푼 경우 등 -> 결과 화면으로
+            // 단, 결과가 0개면 화면에서 "푼 문제가 없습니다" 나올 수 있음
+            onGameEnd([], 0);
+            return;
+          }
           setError('No questions found');
         }
         setQuestions(fetchedQuestions);
@@ -77,7 +86,14 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
         // 도전 모드일 때만 추가 문제 로드
         if (gameMode === 'challenge') {
           try {
-            const moreQuestions = await fetchQuestions(difficulty, 'random', 10);
+            // 새 문제 생성 없이 DB에서만 가져옴
+            const moreQuestions = await fetchQuestions(difficulty, 'random', 10, false);
+
+            // 더 이상 가져올 문제가 없으면 게임 종료 (클리어)
+            if (moreQuestions.length === 0) {
+              onGameEnd([...results], maxStreak);
+              return;
+            }
             setQuestions((prev) => [...prev, ...moreQuestions]);
           } catch (e) {
             console.error("Failed to fetch more questions", e);
@@ -119,6 +135,12 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
     try {
       // 백엔드 LLM을 통한 정답 확인
       const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다. 메인 화면으로 이동합니다.');
+        onExit();
+        return;
+      }
+
       const response = await verifyAnswer(
         questions[currentRound].id,
         userAnswer.trim(),
@@ -180,7 +202,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
 
   if (loading) {
     return (
-      <div className="max-w-2xl w-full text-center space-y-4">
+      <div className="max-w-2xl w-full mx-auto text-center space-y-4">
         <h2 className="text-2xl text-foreground">Context Hunter</h2>
         <div className="text-muted-foreground">문제를 불러오는 중...</div>
       </div>
@@ -189,7 +211,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
 
   if (!questions[currentRound]) {
     return (
-      <div className="max-w-2xl w-full text-center space-y-4">
+      <div className="max-w-2xl w-full mx-auto text-center space-y-4">
         <h2 className="text-2xl text-foreground">Context Hunter</h2>
         <div className="text-destructive">문제를 불러오는데 실패했습니다. ({error})</div>
         <button onClick={onExit} className="text-primary hover:underline">메인으로 돌아가기</button>
