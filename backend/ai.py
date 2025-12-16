@@ -15,7 +15,7 @@ class AIClient:
     def __init__(self):
         self.api_key = os.getenv("AI_API_KEY")
         self.base_url = os.getenv("AI_BASE_URL")
-        self.model_name = os.getenv("AI_MODEL_NAME", "qwen2.5:7b") # Ollama standard model name
+        self.model_name = os.getenv("AI_MODEL_NAME", "gemma2") # Default to gemma2
         
         if not self.api_key:
             print("WARNING: AI_API_KEY not found. Defaulting to 'ollama' for local usage.")
@@ -66,7 +66,7 @@ class AIClient:
 
     def generate_question(self, category: str, difficulty: int = 1) -> Dict[str, Any]:
         """
-        Llama 3.1 8b를 사용하여 특정 주제의 문제를 생성합니다.
+        Llama 3.1 8b / Gemma2를 사용하여 특정 주제의 문제를 생성합니다.
         context 없이 AI가 스스로 문장을 창작하고 암호화합니다.
         """
         if not self.client:
@@ -165,7 +165,7 @@ class AIClient:
 
     def check_similarity(self, user_answer: str, correct_meaning: str) -> Dict[str, Any]:
         """
-        Llama 3.1 8b를 사용하여 의미적 유사도를 판별합니다.
+        Llama 3.1 8b / Gemma2를 사용하여 의미적 유사도를 판별합니다.
         """
         if not self.client:
             return {
