@@ -1,8 +1,8 @@
 import type { Question, VerifyResponse } from '../types';
 
-// In production (without Nginx proxy), we access backend directly.
-// This assumes the browser can reach this URL.
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:64039/api';
+// In production, we use a Node.js proxy (server.js) to forward /api requests to the backend.
+// This solves the CORS and Remote Access issues without Nginx.
+export const API_BASE_URL = '/api';
 
 // 난이도별/분야별 문제 목록 가져오기
 export const fetchQuestions = async (difficulty: number, category?: string, limit: number = 10, allowGeneration: boolean = true): Promise<Question[]> => {

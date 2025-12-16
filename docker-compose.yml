@@ -34,14 +34,14 @@ services:
     container_name: context-backend
     build: ./backend
     restart: always
-    network_mode: "host" # Use host network to access DB as 'localhost'
-    command: uvicorn main:app --host 0.0.0.0 --port 64039 # Avoid port 8000 conflict
+    network_mode: "host" # Use host network to appear as localhost to DB
+    command: uvicorn main:app --host 0.0.0.0 --port 64039
     depends_on:
       - ollama
     environment:
       DATABASE_URL: mysql+pymysql://dbid253:dbpass253@127.0.0.1/db25339?charset=utf8mb4
       AI_API_KEY: ${AI_API_KEY:-ollama}
-      AI_BASE_URL: http://127.0.0.1:11434/v1
+      AI_BASE_URL: http://127.0.0.1:11434/v1 # Access mapped port on host
       AI_MODEL_NAME: ${AI_MODEL_NAME:-qwen2.5:7b}
 
   frontend:
@@ -50,6 +50,10 @@ services:
     restart: always
     ports:
       - "65039:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Required for frontend to reach backend on host
+    environment:
+      - BACKEND_URL=http://host.docker.internal:64039 # Point proxy to host
     depends_on:
       - backend
     networks:

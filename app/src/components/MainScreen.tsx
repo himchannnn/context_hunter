@@ -38,19 +38,19 @@ export default function MainScreen({ onSelectMode, onOpenNotes, onTerms, onPriva
         <ul className="space-y-3 text-muted-foreground text-sm md:text-base">
           <li className="flex items-start gap-2">
             <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">1</span>
-            <span>다양한 분야의 문장을 읽고 문맥을 파악하세요</span>
+            <span>주어진 문장을 보고 본인이 해석한 문장을 입력하세요.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">2</span>
-            <span>주어진 문장과 비슷한 의미의 문장을 입력하세요</span>
+            <span>AI가 문장의 유사도를 분석하고 채점합니다.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">3</span>
-            <span>AI가 당신의 문해력을 측정합니다</span>
+            <span>유사도 50% 이상일 경우 정답으로 인정!</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">4</span>
-            <span>일일 도전 각 분야 완료 시 10 크레딧을 부여합니다</span>
+            <span>일일 도전 각 분야 완료 시 10 크레딧을 부여합니다.</span>
           </li>
         </ul>
       </div>

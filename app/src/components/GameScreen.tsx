@@ -16,6 +16,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
   const [currentRound, setCurrentRound] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [results, setResults] = useState<GameResult[]>([]);
+  const [feedback, setFeedback] = useState<string | null>(null); // AI 피드백 메시지
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState('');
@@ -103,6 +104,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
       setCurrentRound((prev) => prev + 1);
       setUserAnswer('');
       setShowFeedback(false);
+      setFeedback(null); // 피드백 초기화
       setCorrectAnswer('');
       setSimilarity(0);
     }
@@ -151,6 +153,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
       setIsCorrect(response.isCorrect);
       setCorrectAnswer(response.correctAnswer || userAnswer.trim());
       setSimilarity(response.similarity || 0);
+      setFeedback(response.feedback || null); // 피드백 저장
       setShowFeedback(true);
 
       const currentQuestion = questions[currentRound];
@@ -339,9 +342,15 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
               <div className="text-muted-foreground">
                 입력한 답: <span className={isCorrect ? 'text-green-600' : 'text-destructive'}>{userAnswer}</span>
               </div>
+              {/* AI 피드백 표시 */}
+              {feedback && (
+                <div className="bg-muted/50 p-3 rounded-md text-sm text-foreground/80 break-keep">
+                  💡 {feedback}
+                </div>
+              )}
               {!isCorrect && (
                 <div className="text-muted-foreground">
-                  정답 예시: <span className="text-green-600">{correctAnswer}</span>
+                  모범 답안: <span className="text-green-600">{correctAnswer}</span>
                 </div>
               )}
             </div>

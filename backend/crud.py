@@ -100,12 +100,15 @@ def verify_answer(db: Session, question_id: str, user_answer: str, user_id: int 
             
         # 1. 보여지는 문장(문제)과 동일한 경우 정답 처리 금지 (Copy & Paste 방지)
         # 띄어쓰기 무시하고 비교
-        if user_answer.replace(" ", "") == question.encoded_text.replace(" ", ""):
+        # 1. 보여지는 문장(문제)과 동일한 경우 정답 처리 금지 (Copy & Paste 방지)
+        # difflib를 사용해 유사도 90% 이상이면 반려
+        matcher = difflib.SequenceMatcher(None, user_answer, question.encoded_text)
+        if matcher.ratio() >= 0.9:
             return schemas.VerifyAnswerResponse(
                 isCorrect=False,
                 similarity=0.0,
-                correctAnswer=None, # 정답을 바로 보여주지 않음 (혹은 정책에 따라 변경 가능)
-                feedback="제시된 문장을 그대로 입력하셨습니다. 문장의 의미를 자신의 말로 풀어서 설명해주세요."
+                correctAnswer=None, 
+                feedback="원문에 있는 단어들을 너무 많이 사용했습니다. 자신의 말로 풀어서 설명해주세요."
             )
         
         # AI를 이용한 유사도 판별 호출

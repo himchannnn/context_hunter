@@ -109,15 +109,16 @@ class AIClient:
            - Example style: "작위적인 평온함은 겉으로는 고요하나, 실상은 위태로운 살얼음판과 같다." (Sophisticated).
            
         4. **Model Answer (CRITICAL)**: 
-           - The `original_meaning` MUST be a **Direct Paraphrase** using **ONLY SIMPLE, EVERYDAY KOREAN**.
-           - **CONSTRAINT**: Do NOT use the same key verbs/adjectives as the `encoded_sentence`. **Change the vocabulary entirely.**
-           - If `encoded_sentence` uses "작위적" (artificial), `original_meaning` MUST use "억지로 꾸며낸" (forced/fake), NOT "인위적" (which is still hard).
-           - Structure: Exact parallel to the encoded sentence, just easier words.
+           - The `original_meaning` MUST be a **Natural Paraphrase**.
+           - **CONSTRAINT**: You MAY use common verbs/adjectives from the encoded sentence if they are simple (e.g., "있다", "하다", "같다").
+           - **FOCUS**: Paraphrase ONLY the difficult/abstract words (like "{selected_word}") into easier terms.
+           - Do not over-simplify to the point of being childish. Keep the tone natural but clear.
+           - Structure: Keep the sentence structure similar so it's easy to compare.
            - **NO EXPLANATION**: Do not say "This means...". Just the translated sentence.
 
         [Constraints]
         1. **DIFFICULTY**: The `encoded_sentence` must be challenging. Use metaphors (은유), idioms (관용구), or advanced grammar.
-        2. **SEPARATION**: `encoded_sentence` = Hard/Abstract words. `original_meaning` = Easy/Concrete words.
+        2. **CLARITY**: `original_meaning` should clearly explain the difficult parts using everyday Korean.
         3. **NO OPPOSITE**: Ensure the meaning is exactly the same, not the opposite.
         4. **NO NONSENSE**: Standard Korean only. No scrambled text.
 
@@ -192,12 +193,14 @@ class AIClient:
         [Instructions]
         - Focus on the **intent and core meaning**, not just literal word matching.
         - Paraphrasing, synonyms, and different sentence structures that convey the same message should receive high scores (80-100).
+        - **Irony/Sarcasm**: If the user uses irony that effectively conveys the *correct meaning* in context, accept it.
+        - **Personal Style/Tone**: Accept different tones (formal, informal, dialect, unique expressions) as long as the core meaning is preserved.
         - "배가 고프다" (hungry) and "식사를 하고 싶다" (want to eat) are contextually similar enough to be correct.
         - Only mark as 0-49 if the meaning is truly unrelated or opposite.
         - **IMPORTANT**: If the User Answer is just punctuation (e.g. ".", "?", "!") or a single meaningless character, score it as 0.
         
         [Scoring Guidelines]
-        - 100: Perfect match or perfect paraphrase.
+        - 100: Perfect match or perfect paraphrase, including valid stylistic variations.
         - 80-99: Core meaning is the same, but slightly different tone or word choice.
         - 50-79: Partially correct, captures part of the meaning but misses nuance.
         - 0-49: Incorrect meaning, irrelevant, opposite, or meaningless punctuation like ".".
@@ -268,10 +271,9 @@ class AIClient:
         [Checklist]
         1. **Grammar & Sense**: Is `encoded_sentence` a PERFECT, logical Korean sentence? (If strictly nonsense, REWRITE it).
         2. **Difficulty Check**: Is `encoded_sentence` sophisticated enough? (If too simple, make it more formal/metaphorical).
-        3. **Vocabulary Distinction**: Does `original_meaning` use **DIFFERENT** words from `encoded_sentence`? 
-           - *Bad*: Encoded="교착 상태", Meaning="교착된 상태" (Too similar).
-           - *Good*: Encoded="교착 상태", Meaning="꼼짝달싹 못하는 상태".
-           - **Fix**: Rewrite meaning to use purely native/easy Korean.
+        3. **Vocabulary Distinction**: Does `original_meaning` clearly explain the *difficult* words?
+           - It is OK to share common words (like 조사, 어미, simple verbs).
+           - *Check*: Did it paraphrase the KEY difficult word? (e.g. "교착" -> "꼼짝 못하는").
         4. **Opposite Check**: Does the meaning accidentally say the opposite? (e.g., "Good" vs "Not Good"). Fix it to match exactly.
         5. **No Chinese/Foreign Script**: Does `original_meaning` or `encoded_sentence` contain **Chinese characters (Hanja)**? 
            - **REMOVE** all Hanja (e.g., "亐", "下"). Use **ONLY Hangul**.

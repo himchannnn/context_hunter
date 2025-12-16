@@ -17,7 +17,7 @@ AI 기능(검증 로직 등)은 다른 모듈로 대체될 수 있도록 설계�
 ```
 Context_Hunter_WLogin/
 ├── app/                # Frontend (React)
-│   └── Dockerfile      # Frontend 빌드 및 serve 실행 (Port 3000)
+│   └── Dockerfile      # Frontend 빌드 및 Node.js Proxy 실행 (Port 3000)
 ├── backend/            # Backend (FastAPI)
 │   ├── Dockerfile      # Backend Python 환경 설정
 │   └── ...

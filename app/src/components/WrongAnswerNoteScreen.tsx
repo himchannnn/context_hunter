@@ -113,7 +113,7 @@ export default function WrongAnswerNoteScreen({ onBack }: WrongAnswerNoteScreenP
                                         <div className="text-foreground">{note.user_answer}</div>
                                     </div>
                                     <div className="bg-green-500/10 p-4 rounded-md">
-                                        <div className="text-sm text-green-600 mb-1">정답</div>
+                                        <div className="text-sm text-green-600 mb-1">모범 답안</div>
                                         <div className="text-foreground">{note.question.correct_meaning}</div>
                                     </div>
                                 </div>

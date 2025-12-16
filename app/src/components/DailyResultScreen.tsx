@@ -147,7 +147,7 @@ export default function DailyResultScreen({ results, onRetry, onHome }: DailyRes
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">정답:</span>
+                    <span className="text-muted-foreground block mb-1">모범 답안:</span>
                     <span className="text-foreground">{result.question.correct_meaning}</span>
                   </div>
                   <div>
