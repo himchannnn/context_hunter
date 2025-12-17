@@ -151,7 +151,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
       console.log('Verify response:', response);
 
       setIsCorrect(response.isCorrect);
-      setCorrectAnswer(response.correctAnswer || userAnswer.trim());
+      setCorrectAnswer(response.correctAnswer || '');
       setSimilarity(response.similarity || 0);
       setFeedback(response.feedback || null); // 피드백 저장
       setShowFeedback(true);
