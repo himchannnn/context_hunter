@@ -114,7 +114,7 @@ def verify_answer(db: Session, question_id: str, user_answer: str, user_id: int 
                 return schemas.VerifyAnswerResponse(
                     isCorrect=False,
                     similarity=0.0,
-                    correctAnswer=None, 
+                    correctAnswer=question.correct_meaning, 
                     feedback="원문에 있는 단어들을 너무 많이 사용했습니다. 자신의 말로 풀어서 설명해주세요."
                 )
         
