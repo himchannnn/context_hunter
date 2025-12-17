@@ -2,11 +2,11 @@ import type { Difficulty } from '../types';
 import { ChevronLeft } from 'lucide-react';
 
 interface DifficultyScreenProps {
-  onStartGame: (difficulty: Difficulty) => void;
+  onSelectDifficulty: (difficulty: Difficulty) => void;
   onBack: () => void;
 }
 
-export default function DifficultyScreen({ onStartGame, onBack }: DifficultyScreenProps) {
+export default function DifficultyScreen({ onSelectDifficulty, onBack }: DifficultyScreenProps) {
   return (
     <div className="max-w-2xl w-full text-center space-y-8 md:space-y-12 px-4">
       {/* 뒤로가기 버튼 */}
@@ -27,19 +27,19 @@ export default function DifficultyScreen({ onStartGame, onBack }: DifficultyScre
       {/* 난이도 선택 버튼 */}
       <div className="flex flex-col md:flex-row gap-4 justify-center">
         <button
-          onClick={() => onStartGame(1)}
+          onClick={() => onSelectDifficulty(1)}
           className="px-8 py-6 md:py-8 border-2 border-primary rounded-xl text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-xl font-bold text-lg"
         >
           청년층
         </button>
         <button
-          onClick={() => onStartGame(2)}
+          onClick={() => onSelectDifficulty(2)}
           className="px-8 py-6 md:py-8 border-2 border-primary rounded-xl text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-xl font-bold text-lg"
         >
           중장년층
         </button>
         <button
-          onClick={() => onStartGame(3)}
+          onClick={() => onSelectDifficulty(3)}
           className="px-8 py-6 md:py-8 border-2 border-primary rounded-xl text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-xl font-bold text-lg"
         >
           노년층

@@ -91,7 +91,7 @@ export default function ContactScreen({ onBack }: ContactScreenProps) {
             <div className="mt-8 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
                 <h4 className="font-bold mb-2">고객센터 운영 안내</h4>
                 <p>운영시간: 평일 10:00 ~ 18:00 (주말 및 공휴일 휴무)</p>
-                <p>이메일: spt_contexthunter@gachon.ac.kr</p>
+                <p>이메일: gjtjwnsdl@gachon.ac.kr</p>
             </div>
         </div>
     );

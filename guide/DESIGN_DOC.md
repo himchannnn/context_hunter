@@ -10,7 +10,7 @@
 *   **전체 기능 요약**:
     *   **사용자 관리**: 회원가입, 로그인(JWT), 게스트 모드
     *   **게임 플레이**: 일일 모드(10문제), 도전 모드(무한/3Life)
-    *   **AI 분석**: 답안 유사도 분석 (multilingual-e5-small) 및 문제 생성 (Llama 3.1 8b)
+    *   **AI 분석**: 답안 유사도 분석 및 문제 생성 (Llama 3.1 8b via API)
     *   **학습 보조**: 오답 노트, 랭킹 시스템, 소셜 공유
 *   **사용자 유형 및 시나리오**:
     *   **일반 사용자**: 로그인 후 기록 저장, 랭킹 경쟁, 오답 복습
@@ -49,14 +49,13 @@ graph TD
 *   **데이터베이스**: SQLite (개발), MariaDB (운영)
 *   **메시징 시스템**: (현재 미사용, 추후 Redis 도입 고려)
 *   **AI Engine**: 
-    *   **Generation**: Llama 3.1 8b (via OpenAI-compatible API)
-    *   **Embedding**: multilingual-e5-small (Local Execution)
+    *   **Generation & Embedding**: Llama 3.1 8b (All via OpenAI-compatible API)
 
 ### 5. 데이터 흐름 (Data Flow)
 *   **사용자 요청 → 처리 → 응답 흐름 (정답 검증 예시)**:
     1.  **User**: 답안 입력 및 제출
     2.  **Frontend**: `POST /api/verify` 요청 전송
-    3.  **Backend**: DB에서 정답 조회 -> 로컬 임베딩 모델로 유사도 분석 -> 결과 판별 -> DB 저장
+    3.  **Backend**: DB에서 정답 조회 -> AI API 호출로 유사도 분석 및 정답 판별 -> DB 저장
     4.  **Frontend**: 결과(정답/오답, 유사도) 수신 및 UI 표시
 
 ### 6. 주요 모듈 설명 (Key Modules)
@@ -180,7 +179,7 @@ sequenceDiagram
     def verify_answer(user_answer, correct_meaning):
         # 1. AI Analysis (multilingual-e5-small)
         try:
-            # backend/ai.py의 check_similarity 호출
+            # backend/ai.py의 check_similarity 호출 (Llama 3.1 API)
             result = check_similarity(user_answer, correct_meaning)
             score = result['similarity_score']
             is_correct = result['is_correct']

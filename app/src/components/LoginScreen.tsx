@@ -4,28 +4,29 @@ import { API_BASE_URL } from '../lib/api';
 
 interface LoginScreenProps {
     onSignupClick: () => void;
+    onBack?: () => void;
+    onLoginSuccess?: () => void;
 }
 
-export default function LoginScreen({ onSignupClick }: LoginScreenProps) {
+export default function LoginScreen({ onSignupClick, onBack, onLoginSuccess }: LoginScreenProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useAuth();
 
-    // 로그인 폼 제출 핸들러
+    // 로그인 폼 제출 핸들러 (unchanged)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
-
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: formData,
+                body: new URLSearchParams({
+                    username,
+                    password,
+                }),
             });
 
             if (!response.ok) {
@@ -34,41 +35,37 @@ export default function LoginScreen({ onSignupClick }: LoginScreenProps) {
 
             const data = await response.json();
             await login(data.access_token);
+            if (onLoginSuccess) {
+                onLoginSuccess();
+            }
         } catch (err) {
             setError('아이디 또는 비밀번호가 올바르지 않습니다.');
         }
     };
 
-    // 게스트 로그인 핸들러
-    const handleGuestLogin = async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/guest`, {
-                method: 'POST',
-            });
 
-            if (!response.ok) {
-                throw new Error('Guest login failed');
-            }
-
-            const data = await response.json();
-            await login(data.access_token);
-        } catch (err) {
-            setError('게스트 로그인 실패');
-        }
-    };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
-                        Context Hunter
+        <div className="w-full flex items-center justify-center bg-background p-5 relative">
+            {/* Back Button */}
+            {onBack && (
+                <button
+                    onClick={onBack}
+                    className="absolute top-3 left-3 p-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                </button>
+            )}
+
+            <div className="max-w-md w-full space-y-3">
+                <div className="text-center">
+                    <h2 className="mt-2 text-xl font-bold text-foreground">
+                        환영합니다! 👋
                     </h2>
-                    <p className="mt-2 text-center text-sm text-muted-foreground">
-                        계정에 로그인하세요
-                    </p>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
                     <div className="rounded-md shadow-sm -space-y-px">
                         <div>
                             <input
@@ -107,13 +104,6 @@ export default function LoginScreen({ onSignupClick }: LoginScreenProps) {
                 </form>
 
                 <div className="flex flex-col gap-4">
-                    <button
-                        onClick={handleGuestLogin}
-                        className="w-full flex justify-center py-3 px-4 border-2 border-input text-sm font-bold rounded-xl text-foreground bg-card hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-                    >
-                        게스트로 플레이
-                    </button>
-
                     <button
                         onClick={onSignupClick}
                         className="w-full flex justify-center py-3 px-4 border-2 border-input text-sm font-bold rounded-xl text-foreground bg-card hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"

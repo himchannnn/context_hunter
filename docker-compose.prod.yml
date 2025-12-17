@@ -38,7 +38,7 @@ services:
       # AI Config
       AI_API_KEY: ollama
       AI_BASE_URL: http://ollama:11434/v1
-      AI_MODEL_NAME: llama3.1
+      AI_MODEL_NAME: gemma2
     networks:
       - app-network
 

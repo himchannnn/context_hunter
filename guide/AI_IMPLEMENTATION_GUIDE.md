@@ -42,18 +42,7 @@ result = check_similarity(user_answer, correct_answer)
 # result: { "similarity_score": 95, "is_correct": True, "feedback": "..." }
 ```
 
-## 4. 테스트 및 검증 (Testing)
 
-`backend/test_ai.py` 스크립트를 통해 AI 기능을 독립적으로 테스트할 수 있습니다.
-
-```bash
-# 테스트 실행
-python backend/test_ai.py
-```
-
-### 테스트 항목
-1.  **Similarity Check (Mock)**: 정답 검증 로직이 정상적으로 동작하는지 확인.
-2.  **Question Generation (Mock)**: 문제 생성 로직이 정상적으로 동작하는지 확인.
 
 ## 5. 주의 사항 (Notes)
 *   **API 비용**: Llama 3.1 API 사용 시 공급자에 따라 비용이 발생할 수 있습니다.

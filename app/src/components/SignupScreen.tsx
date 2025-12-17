@@ -3,15 +3,16 @@ import { API_BASE_URL } from '../lib/api';
 
 interface SignupScreenProps {
     onLoginClick: () => void;
+    onBack?: () => void;
 }
 
-export default function SignupScreen({ onLoginClick }: SignupScreenProps) {
+export default function SignupScreen({ onLoginClick, onBack }: SignupScreenProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    // 회원가입 폼 제출 핸들러
+    // 회원가입 폼 제출 핸들러 (unchanged)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -29,7 +30,6 @@ export default function SignupScreen({ onLoginClick }: SignupScreenProps) {
             }
 
             setSuccess(true);
-            // 회원가입 성공 시 2초 후 로그인 화면으로 전환
             setTimeout(() => {
                 onLoginClick();
             }, 2000);
@@ -39,14 +39,26 @@ export default function SignupScreen({ onLoginClick }: SignupScreenProps) {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
+        <div className="w-full flex items-center justify-center bg-background p-5 relative">
+            {/* Back Button */}
+            {onBack && (
+                <button
+                    onClick={onBack}
+                    className="absolute top-3 left-3 p-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                </button>
+            )}
+
+            <div className="max-w-md w-full space-y-3">
                 <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
+                    <h2 className="mt-4 text-center text-xl font-extrabold text-foreground">
                         회원가입
                     </h2>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
                     <div className="rounded-md shadow-sm -space-y-px">
                         <div>
                             <input

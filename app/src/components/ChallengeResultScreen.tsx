@@ -9,13 +9,15 @@ interface ChallengeResultScreenProps {
   maxStreak: number;
   difficulty: Difficulty;
   onRestart: () => void;
+  onHome: () => void;
 }
 
 export default function ChallengeResultScreen({
   results,
   maxStreak,
   difficulty,
-  onRestart
+  onRestart,
+  onHome
 }: ChallengeResultScreenProps) {
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [loadingRankings, setLoadingRankings] = useState(false);
@@ -102,7 +104,7 @@ export default function ChallengeResultScreen({
   };
 
   return (
-    <div className="max-w-2xl w-full space-y-8 px-4">
+    <div className="max-w-2xl w-full mx-auto space-y-8 px-4">
       {/* 결과 요약 섹션 */}
       <div className="text-center space-y-4">
         <h2 className="text-xl md:text-2xl text-foreground">도전 모드 결과</h2>
@@ -160,7 +162,7 @@ export default function ChallengeResultScreen({
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">정답:</span>
+                    <span className="text-muted-foreground block mb-1">모범 답안:</span>
                     <span className="text-foreground">{result.question.correct_meaning}</span>
                   </div>
                   <div>
@@ -226,12 +228,12 @@ export default function ChallengeResultScreen({
                         {entry.nickname} {isCurrentUser && '(나)'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">
-                        정답: <span className="text-foreground font-medium">{entry.score}</span>
+                    <div className="flex flex-col items-end gap-1 text-sm">
+                      <span className="text-foreground font-bold">
+                        {entry.score}문제
                       </span>
-                      <span className="text-muted-foreground">
-                        연속: {entry.max_streak}
+                      <span className="text-xs text-muted-foreground">
+                        (최대 연속 {entry.max_streak}문제)
                       </span>
                     </div>
                   </div>
@@ -241,16 +243,57 @@ export default function ChallengeResultScreen({
           </div>
         )}
 
-        {user?.is_guest && (
-          <div className="text-center text-sm text-muted-foreground mt-4 bg-muted/50 p-3 rounded-lg">
-            로그인하면 랭킹에 이름을 올릴 수 있습니다!
+        {/* 게스트 랭킹 등록 폼 */}
+        {user?.is_guest && !saveAttempted.current && (
+          <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+            <h3 className="font-bold text-lg text-foreground">랭킹에 기록 남기기</h3>
+            <p className="text-sm text-muted-foreground">닉네임을 입력하여 명예의 전당에 도전하세요!</p>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const nickname = (form.elements.namedItem('nickname') as HTMLInputElement).value;
+                if (!nickname.trim()) return;
+
+                try {
+                  await saveGuestbook({
+                    nickname: nickname.trim(),
+                    score: correctCount,
+                    max_streak: maxStreak,
+                    difficulty,
+                  });
+                  saveAttempted.current = true; // 방지
+                  alert('랭킹이 등록되었습니다!');
+                  loadRankings();
+                } catch (error) {
+                  console.error('Failed to register ranking:', error);
+                  alert('랭킹 등록에 실패했습니다. 이미 존재하는 닉네임일 수 있습니다.');
+                }
+              }}
+              className="flex gap-2"
+            >
+              <input
+                type="text"
+                name="nickname"
+                placeholder="닉네임 입력 (최대 10자)"
+                maxLength={10}
+                className="flex-1 px-4 py-2 rounded-lg border border-input bg-background"
+                required
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90"
+              >
+                등록
+              </button>
+            </form>
           </div>
         )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
         <button
-          onClick={onRestart}
+          onClick={onHome}
           className="flex-1 py-4 bg-secondary text-secondary-foreground rounded-xl font-bold hover:bg-secondary/80 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
         >
           메인으로 돌아가기
@@ -258,7 +301,15 @@ export default function ChallengeResultScreen({
         <button
           onClick={async () => {
             const link = window.location.origin;
-            const text = `Context Hunter [Challenge]\nScore: ${correctCount} | Streak: ${maxStreak}\n\n끝없는 도전, 당신의 한계는 어디까지인가요?\n지금 바로 도전하세요!\n`;
+
+            // Generate emoji grid (10 per line)
+            let emojiResult = "";
+            results.forEach((r, i) => {
+              if (i > 0 && i % 10 === 0) emojiResult += "\n";
+              emojiResult += r.isCorrect ? '🟩' : '🟥';
+            });
+
+            const text = `Context Hunter [Challenge]\nScore: ${correctCount} | Streak: ${maxStreak}\n\n${emojiResult}\n\n끝없는 도전, 당신의 한계는 어디까지인가요?\n지금 바로 도전하세요!\n`;
 
             const shareData = {
               title: 'Context Hunter Challenge Result',
@@ -299,7 +350,7 @@ export default function ChallengeResultScreen({
           기록 공유하기 🏆
         </button>
         <button
-          onClick={() => window.location.reload()} // Simple reload for restart or pass a restart handler
+          onClick={onRestart}
           className="flex-1 py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg hover:shadow-primary/30"
         >
           다시 하기

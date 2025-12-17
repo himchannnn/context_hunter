@@ -15,17 +15,26 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Stage 2: Serve the application with Nginx
-FROM nginx:alpine
+# Stage 2: Serve the application with Node.js Proxy
+FROM node:18-alpine
 
-# Copy the build output from the previous stage to the Nginx html directory
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy package.json to install production server dependencies
+COPY package.json ./
 
-# Expose port 80
-EXPOSE 80
+# Install production dependencies (Express + Proxy)
+# We only need these for the server script
+RUN npm install express http-proxy-middleware
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Copy the build output
+COPY --from=build /app/dist /app/dist
+
+# Copy the custom server script
+COPY server.js ./server.js
+
+# Expose port 3000
+EXPOSE 3000
+
+# Start custom server
+CMD ["node", "server.js"]

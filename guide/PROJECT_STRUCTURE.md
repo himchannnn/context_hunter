@@ -11,7 +11,7 @@
 ### Backend (`backend/`)
 핵심 로직과 데이터 처리를 담당합니다.
 - **`main.py`**: 앱의 진입점(Entry Point). API 엔드포인트를 정의하고 요청을 라우팅합니다.
-- **`ai.py`**: AI 모델(Llama 3.1)과의 통신을 담당합니다. 문제 생성 및 유사도 판별 로직이 포함되어 있습니다.
+- **`ai.py`**: AI 모델(Llama 3.1)과의 통신을 담당합니다. 문제 생성 및 유사도 판별 로직(API 호출)이 포함되어 있습니다.
 - **`crud.py`**: 데이터베이스 CRUD(Create, Read, Update, Delete) 작업을 수행합니다.
 - **`models.py`**: 데이터베이스 테이블 스키마(SQLAlchemy 모델)를 정의합니다. (`Question`, `User`, `Attempt` 등)
 - **`schemas.py`**: API 요청/응답 데이터 검증을 위한 Pydantic 모델을 정의합니다.

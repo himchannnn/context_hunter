@@ -7,14 +7,16 @@ import { useSound } from '../context/SoundContext';
 interface GameScreenProps {
   difficulty: Difficulty;
   gameMode: GameMode;
+  domain?: string;
   onGameEnd: (results: GameResult[], maxStreak: number) => void;
   onExit: () => void;
 }
 
-export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: GameScreenProps) {
+export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, onExit }: GameScreenProps) {
   const [currentRound, setCurrentRound] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [results, setResults] = useState<GameResult[]>([]);
+  const [feedback, setFeedback] = useState<string | null>(null); // AI 피드백 메시지
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState('');
@@ -31,18 +33,30 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
 
   const { playSound } = useSound();
 
-  const totalRounds = gameMode === 'daily' ? 10 : 999;
+  // 일일 모드는 5문제, 도전 모드는 무제한
+  const totalRounds = gameMode === 'daily' ? 5 : 999;
 
-  // ... (useEffects remain similar) ...
-
-  // 게임 시작 시 문제 가져오기 (unchanged)
+  // 게임 시작 시 문제 가져오기
   useEffect(() => {
     const loadQuestions = async () => {
       setLoading(true);
       setError(null);
       try {
-        const fetchedQuestions = await fetchQuestions(difficulty);
+        const targetCategory = gameMode === 'daily' ? domain : 'random';
+        // 일일 모드는 5문제만 가져오면 됨
+        const limit = gameMode === 'daily' ? 5 : 10;
+        // 도전 모드는 DB 질문 소진 시 종료 (새 질문 생성 안 함)
+        const allowGeneration = gameMode !== 'challenge';
+
+        const fetchedQuestions = await fetchQuestions(difficulty, targetCategory, limit, allowGeneration);
+
         if (fetchedQuestions.length === 0) {
+          if (gameMode === 'challenge') {
+            // 이미 모든 문제를 푼 경우 등 -> 결과 화면으로
+            // 단, 결과가 0개면 화면에서 "푼 문제가 없습니다" 나올 수 있음
+            onGameEnd([], 0);
+            return;
+          }
           setError('No questions found');
         }
         setQuestions(fetchedQuestions);
@@ -55,7 +69,7 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
     };
 
     loadQuestions();
-  }, [difficulty]);
+  }, [difficulty, gameMode, domain]);
 
   // keydown handler (unchanged)
   // ...
@@ -70,13 +84,27 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
     } else {
       // 다음 문제 로드
       if (currentRound + 1 >= questions.length) {
-        // 문제가 부족하면 추가로 가져오기
-        const moreQuestions = await fetchQuestions(difficulty);
-        setQuestions((prev) => [...prev, ...moreQuestions]);
+        // 도전 모드일 때만 추가 문제 로드
+        if (gameMode === 'challenge') {
+          try {
+            // 새 문제 생성 없이 DB에서만 가져옴
+            const moreQuestions = await fetchQuestions(difficulty, 'random', 10, false);
+
+            // 더 이상 가져올 문제가 없으면 게임 종료 (클리어)
+            if (moreQuestions.length === 0) {
+              onGameEnd([...results], maxStreak);
+              return;
+            }
+            setQuestions((prev) => [...prev, ...moreQuestions]);
+          } catch (e) {
+            console.error("Failed to fetch more questions", e);
+          }
+        }
       }
       setCurrentRound((prev) => prev + 1);
       setUserAnswer('');
       setShowFeedback(false);
+      setFeedback(null); // 피드백 초기화
       setCorrectAnswer('');
       setSimilarity(0);
     }
@@ -108,15 +136,24 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
 
     try {
       // 백엔드 LLM을 통한 정답 확인
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다. 메인 화면으로 이동합니다.');
+        onExit();
+        return;
+      }
+
       const response = await verifyAnswer(
         questions[currentRound].id,
-        userAnswer.trim()
+        userAnswer.trim(),
+        token // Pass token for authorized user stats
       );
       console.log('Verify response:', response);
 
       setIsCorrect(response.isCorrect);
       setCorrectAnswer(response.correctAnswer || userAnswer.trim());
       setSimilarity(response.similarity || 0);
+      setFeedback(response.feedback || null); // 피드백 저장
       setShowFeedback(true);
 
       const currentQuestion = questions[currentRound];
@@ -168,7 +205,7 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
 
   if (loading) {
     return (
-      <div className="max-w-2xl w-full text-center space-y-4">
+      <div className="max-w-2xl w-full mx-auto text-center space-y-4">
         <h2 className="text-2xl text-foreground">Context Hunter</h2>
         <div className="text-muted-foreground">문제를 불러오는 중...</div>
       </div>
@@ -177,7 +214,7 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
 
   if (!questions[currentRound]) {
     return (
-      <div className="max-w-2xl w-full text-center space-y-4">
+      <div className="max-w-2xl w-full mx-auto text-center space-y-4">
         <h2 className="text-2xl text-foreground">Context Hunter</h2>
         <div className="text-destructive">문제를 불러오는데 실패했습니다. ({error})</div>
         <button onClick={onExit} className="text-primary hover:underline">메인으로 돌아가기</button>
@@ -186,7 +223,7 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
   }
 
   return (
-    <div className={`max-w-2xl w-full space-y-8 px-4 ${isShaking ? 'shake' : ''}`}>
+    <div className={`max-w-2xl w-full mx-auto space-y-8 px-4 ${isShaking ? 'shake' : ''}`}>
       {/* 나가기 확인 다이얼로그 */}
       {showExitDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -305,9 +342,15 @@ export default function GameScreen({ difficulty, gameMode, onGameEnd, onExit }: 
               <div className="text-muted-foreground">
                 입력한 답: <span className={isCorrect ? 'text-green-600' : 'text-destructive'}>{userAnswer}</span>
               </div>
+              {/* AI 피드백 표시 */}
+              {feedback && (
+                <div className="bg-muted/50 p-3 rounded-md text-sm text-foreground/80 break-keep">
+                  💡 {feedback}
+                </div>
+              )}
               {!isCorrect && (
                 <div className="text-muted-foreground">
-                  정답 예시: <span className="text-green-600">{correctAnswer}</span>
+                  모범 답안: <span className="text-green-600">{correctAnswer}</span>
                 </div>
               )}
             </div>

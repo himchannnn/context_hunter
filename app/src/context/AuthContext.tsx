@@ -1,12 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE_URL } from '../lib/api';
 
-interface User {
-    id: number;
-    username: string;
-    is_guest: boolean;
-    created_at: string;
-}
+import type { User } from '../types';
 
 interface AuthContextType {
     user: User | null;
@@ -14,6 +9,7 @@ interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
     isLoading: boolean;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,8 +64,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
     };
 
+    // 유저 정보 갱신 (크레딧/테마 변경 시 호출)
+    const refreshUser = async () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            await fetchUser(token);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );
