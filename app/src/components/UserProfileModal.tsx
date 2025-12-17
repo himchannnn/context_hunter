@@ -1,4 +1,4 @@
-import { User as UserIcon, LogOut, Coins } from 'lucide-react';
+import { User as UserIcon, LogOut, Coins, CheckCircle } from 'lucide-react';
 import type { User } from '../types';
 
 interface UserProfileModalProps {
@@ -81,6 +81,19 @@ export default function UserProfileModal({ user, userRank, onLogout, onClose }: 
                         </div>
                         <div className="text-2xl font-bold text-amber-600">
                             {user.credits}
+                        </div>
+                    </div>
+
+                    {/* Total Solved */}
+                    <div className="w-full bg-blue-50 rounded-xl p-4 flex justify-between items-center border border-blue-100">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                                <CheckCircle className="w-5 h-5" />
+                            </div>
+                            <div className="text-sm text-blue-800 font-bold">총 푼 문제</div>
+                        </div>
+                        <div className="text-2xl font-bold text-blue-600">
+                            {user.total_solved}
                         </div>
                     </div>
 
