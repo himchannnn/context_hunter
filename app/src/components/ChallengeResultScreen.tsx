@@ -301,7 +301,15 @@ export default function ChallengeResultScreen({
         <button
           onClick={async () => {
             const link = window.location.origin;
-            const text = `Context Hunter [Challenge]\nScore: ${correctCount} | Streak: ${maxStreak}\n\n끝없는 도전, 당신의 한계는 어디까지인가요?\n지금 바로 도전하세요!\n`;
+
+            // Generate emoji grid (10 per line)
+            let emojiResult = "";
+            results.forEach((r, i) => {
+              if (i > 0 && i % 10 === 0) emojiResult += "\n";
+              emojiResult += r.isCorrect ? '🟩' : '🟥';
+            });
+
+            const text = `Context Hunter [Challenge]\nScore: ${correctCount} | Streak: ${maxStreak}\n\n${emojiResult}\n\n끝없는 도전, 당신의 한계는 어디까지인가요?\n지금 바로 도전하세요!\n`;
 
             const shareData = {
               title: 'Context Hunter Challenge Result',

@@ -93,20 +93,21 @@ class AIClient:
         You are a generic puzzle generator for a game called "Context Hunter".
         
         [Goal]
-        Create a **high-difficulty** Korean vocabulary puzzle where the context is obscure and the target word is sophisticated.
+        Create a **Challenging but Modern** Korean vocabulary puzzle.
         
         [Task]
         1. **Target Word**: "{selected_word}"
            - You MUST use this exact word.
         
         2. **Context**: Category "{category}".
-           - Use a **Metaphorical, Archaic, or Highly Abstract** tone (e.g., Editorial, Philosophy, Classicizing).
-           - The sentence should feel "difficult" to a native speaker (JLPT N1 / GRE level).
-           - Do NOT make it a simple description. Make it a thought-provoking statement.
+           - Use a **Sophisticated, Modern, Intellectual** tone (e.g., Quality News, Editorial, University Textbook).
+           - The sentence should feel "difficult" but **readable** to an educated native speaker (University Liberal Arts Level).
+           - **AVOID**: Archaic(고어), Punditry(현학적), or overly Abstract/Philosophical expressions unless necessary.
+           - Focus on **Literacy (문해력)**: Clear, logical, but with high-level vocabulary.
 
         3. **Create Sentence**: 
            - Write a sentence where "{selected_word}" is the pivot of the meaning.
-           - Example style: "작위적인 평온함은 겉으로는 고요하나, 실상은 위태로운 살얼음판과 같다." (Sophisticated).
+           - Example style: "작위적인 연출은 오히려 관객의 몰입을 방해한다." (Clean, Sophisticated).
            
         4. **Model Answer (CRITICAL)**: 
            - The `original_meaning` MUST be a **Natural Paraphrase**.
@@ -117,7 +118,7 @@ class AIClient:
            - **NO EXPLANATION**: Do not say "This means...". Just the translated sentence.
 
         [Constraints]
-        1. **DIFFICULTY**: The `encoded_sentence` must be challenging. Use metaphors (은유), idioms (관용구), or advanced grammar.
+        1. **DIFFICULTY**: The `encoded_sentence` must be challenging (Advanced Vocabulary).
         2. **CLARITY**: `original_meaning` should clearly explain the difficult parts using everyday Korean.
         3. **NO OPPOSITE**: Ensure the meaning is exactly the same, not the opposite.
         4. **NO NONSENSE**: Standard Korean only. No scrambled text.
@@ -126,7 +127,7 @@ class AIClient:
         Return JSON only:
         {{
             "original_sentence": "{selected_word}",
-            "encoded_sentence": "...hard sentence with {selected_word}...",
+            "encoded_sentence": "...sophisticated sentence with {selected_word}...",
             "original_meaning": "...same sentence in plain Korean...",
             "difficulty_level": {difficulty},
             "category": "{category}"
@@ -163,9 +164,10 @@ class AIClient:
             print(f"Error generating question: {e}")
             return {"error": str(e)}
 
-    def check_similarity(self, user_answer: str, correct_meaning: str) -> Dict[str, Any]:
+    def check_similarity(self, user_answer: str, source_text: str) -> Dict[str, Any]:
         """
         Llama 3.1 8b / Gemma2를 사용하여 의미적 유사도를 판별합니다.
+        Compares User Answer against the difficult Source Text (Correct & Encoded Sentence) to verify paraphrasing.
         """
         if not self.client:
             return {
@@ -183,27 +185,24 @@ class AIClient:
             }
 
         prompt = f"""
-        Compare the meaning of the two sentences below.
+        You are a strict Evaluator for a Korean literacy game.
         
-        1. Correct Meaning: "{correct_meaning}"
-        2. User Answer: "{user_answer}"
+        [Task]
+        Determine if the **User Answer** is a valid Simplification/Paraphrase of the **Source Text**.
         
-        Evaluate the semantic similarity.
+        1. **Source Text (Difficult)**: "{source_text}"
+        2. **User Answer (Easy)**: "{user_answer}"
         
-        [Instructions]
-        - Focus on the **intent and core meaning**, not just literal word matching.
-        - Paraphrasing, synonyms, and different sentence structures that convey the same message should receive high scores (80-100).
-        - **Irony/Sarcasm**: If the user uses irony that effectively conveys the *correct meaning* in context, accept it.
-        - **Personal Style/Tone**: Accept different tones (formal, informal, dialect, unique expressions) as long as the core meaning is preserved.
-        - "배가 고프다" (hungry) and "식사를 하고 싶다" (want to eat) are contextually similar enough to be correct.
-        - Only mark as 0-49 if the meaning is truly unrelated or opposite.
-        - **IMPORTANT**: If the User Answer is just punctuation (e.g. ".", "?", "!") or a single meaningless character, score it as 0.
+        [Evaluation Criteria]
+        - **Core Meaning**: Does the user understand the sophisticated words in the Source Text?
+        - **Simplification**: The user is trying to explain the difficult text in easier words.
+        - **Accuracy**: The user message must convey the SAME intent as the Source Text.
         
         [Scoring Guidelines]
-        - 100: Perfect match or perfect paraphrase, including valid stylistic variations.
-        - 80-99: Core meaning is the same, but slightly different tone or word choice.
-        - 50-79: Partially correct, captures part of the meaning but misses nuance.
-        - 0-49: Incorrect meaning, irrelevant, opposite, or meaningless punctuation like ".".
+        - **100**: Perfect understanding and paraphrasing.
+        - **80-99**: Good understanding, slightly different nuance but correct core meaning.
+        - **50-79**: Partially correct. Captures the general idea but misses the key keyword's nuance.
+        - **0-49**: Completely wrong, irrelevant number/symbol, or opposite meaning.
         
         [Decision Rule]
         - is_correct: true if similarity_score >= 50
@@ -214,13 +213,11 @@ class AIClient:
         {{
             "is_correct": boolean,
             "similarity_score": integer (0-100),
-            "feedback": "Short feedback in Korean (1 sentence)"
+            "feedback": "Short feedback in Korean (1 sentence) explaining why it is correct/incorrect."
         }}
 
         **IMPORTANT SCORING RULE**:
         - Do NOT round to the nearest 5 or 10. Use precise numbers like 87, 92, 73, 64.
-        - If it is almost perfect but slightly off, use high 90s (e.g., 96, 98).
-        - If it is clearly wrong but has one correct word, use low numbers (e.g., 12, 23).
         """
 
         try:
@@ -278,6 +275,8 @@ class AIClient:
         5. **No Chinese/Foreign Script**: Does `original_meaning` or `encoded_sentence` contain **Chinese characters (Hanja)**? 
            - **REMOVE** all Hanja (e.g., "亐", "下"). Use **ONLY Hangul**.
            - Even if the word is difficult, write it in Hangul.
+        6. **Semantic Consistency**: Does `original_meaning` (Model Answer) mean EXACTLY the same thing as `encoded_sentence`?
+           - If there is a slight shift in meaning, FIX `original_meaning` to align perfectly with `encoded_sentence`.
 
         [Action]
         - If PERFECT: Return the input JSON exactly as is.
