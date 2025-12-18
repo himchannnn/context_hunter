@@ -56,18 +56,31 @@ classDiagram
         +update_ranking(nickname, score)
     }
 
+    class DailyProgress {
+        +int id
+        +int user_id
+        +string date
+        +text cleared_domains
+        +boolean reward_claimed
+        +update_progress(user_id, date, domain)
+    }
+
     User "1" --> "*" WrongAnswerNote : has
     Question "1" --> "*" WrongAnswerNote : referenced_by
     Question "1" --> "*" Attempt : has_logs
+    User "1" --> "*" DailyProgress : tracks
 ```
 
 
 ### 2.2 Pydantic Schemas (Data Transfer Objects)
-*   **User**: `UserCreate`, `UserLogin`, `UserResponse`
+
+*   **User**: `UserCreate`, `UserLogin`, `UserResponse` (includes `credits`, `owned_themes`)
 *   **Question**: `QuestionBase`, `Question`, `QuestionsResponse`
 *   **Note**: `WrongAnswerNoteCreate`, `WrongAnswerNoteResponse`
 *   **Verification**: `VerifyAnswerRequest`, `VerifyAnswerResponse`
 *   **Ranking**: `GuestbookCreate`, `RankingEntry`
+*   **Daily**: `DailyProgressResponse`, `DailyProgressUpdate`
+*   **Shop**: `ShopPurchaseRequest`, `ThemeEquipRequest`
 
 ## 3. API 상세 설계 (API Specifications)
 
@@ -96,7 +109,16 @@ classDiagram
 | Method | Endpoint | Request Body | Response Body | 설명 |
 | :--- | :--- | :--- | :--- | :--- |
 | GET | `/api/rankings` | - | `List[RankingEntry]` | 랭킹 조회 |
+
 | POST | `/api/guestbook` | `{nickname(2-10자, 비속어 금지), score}` | - | 랭킹(방명록) 저장 |
+
+### 3.5 Daily & Shop API
+| Method | Endpoint | Request Body | Response Body | 설명 |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/api/daily-progress` | `date`(YYYY-MM-DD) | `DailyProgressResponse` | 일일 진행 상황 조회 |
+| POST | `/api/daily-progress` | `DailyProgressUpdate` | `DailyProgressResponse` | 진행 상황 업데이트 및 보상 |
+| POST | `/api/shop/buy` | `{theme_id}` | `{message, credits, owned_themes}` | 테마 구매 |
+| POST | `/api/user/equip` | `{theme_id}` | `{message, equipped_theme}` | 테마 장착 |
 
 ### 3.6 Error Codes
 | Code | Status | Description |
@@ -155,11 +177,12 @@ sequenceDiagram
 ## 4. DB 상세 설계 (Database Schema)
 
 ### 4.1 Tables
-*   **users**: `id` (PK), `username` (Unique), `hashed_password`, `is_guest`, `created_at`
+*   **users**: `id` (PK), `username` (Unique), `hashed_password`, `is_guest`, `created_at`, `credits`, `owned_themes`, `equipped_theme`, `total_solved`
 *   **questions**: `id` (PK), `encoded_text`, `original_text`, `correct_meaning`, `difficulty`, `correct_count`, `total_attempts`
 *   **wrong_answer_notes**: `id` (PK), `user_id` (FK), `question_id` (FK), `user_answer`, `created_at`
 *   **attempts**: `id` (PK), `question_id` (FK), `user_answer`, `similarity_score`, `is_correct`, `timestamp`
 *   **guestbook**: `id` (PK), `nickname`, `score`, `max_streak`, `difficulty`, `timestamp`
+*   **daily_progress**: `id` (PK), `user_id` (FK), `date`, `cleared_domains`, `reward_claimed`
 
 ### 4.2 ERD (Entity Relationship Diagram)
 > 위 클래스 다이어그램 참조 (1:N 관계 위주)
