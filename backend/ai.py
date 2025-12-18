@@ -26,7 +26,6 @@ class AIClient:
             base_url=self.base_url
         )
 
-# 사전에 정의된 고난이도 어휘 데이터베이스 (다양성 확보용)
     # 사전에 정의된 고난이도 어휘 데이터베이스 (다양성 확보용)
     WORD_DATABASE = {
         "Politics": [
@@ -58,7 +57,6 @@ class AIClient:
             "완화", "중재", "개입", "철수", "파병", "난민", "참상", "인도적", "지원", "원조",
             "국경", "영토", "주권", "침해", "반군", "내전", "쿠데타", "독재", "선거", "혁명"
         ],
-
         "General": [
             "고지식", "기락", "갈무리", "유명세", "일가견", "취지", "단초", "빌미", "여지", "개연성", 
             "타당성", "실효성", "가시화", "구체화", "형해화", "사문화", "유야무야", "지지부진", "전무후무", "미봉책",
@@ -86,32 +84,61 @@ class AIClient:
         if not self.client:
             return {"error": "AI client not initialized"}
 
-        # 난이도에 따른 가이드
+        # 난이도에 따른 가이드 강화
         difficulty_guide = ""
-        if difficulty == 1:
-            difficulty_guide = "Simple sentence, common vocabulary, easy to guess context."
-        elif difficulty == 2:
-            difficulty_guide = "Moderate sentence structure, some idioms."
-        else:
-            difficulty_guide = "Complex sentence, abstract concepts, advanced vocabulary."
-
-        # Select a target word from the database
-        target_list = self.WORD_DATABASE.get(category, self.WORD_DATABASE["General"] + self.WORD_DATABASE["Society"])
-        # If category words run out or valid key not found, fallback to combined list
-        if not target_list:
-             target_list = self.WORD_DATABASE["General"]
         
-        selected_word = random.choice(target_list)
+        # 난이도 보정 (요청된 난이도가 낮아도 가끔 어렵게)
+        if difficulty == 1:
+            # 1단계도 너무 쉽지 않게 설정
+            difficulty_guide = "Common vocabulary, but sophisticated sentence structure. Not childish."
+        elif difficulty == 2:
+            difficulty_guide = "Advanced vocabulary, metaphorical expressions, professional tone."
+        else:
+            difficulty_guide = "Highly abstract concepts, archaic/literary words, complex sentence structure with subordinate clauses."
+
+        # 난이도 보정 (요청된 난이도가 낮아도 가끔 어렵게)
+        if difficulty == 1:
+            difficulty_guide = "Common vocabulary, but sophisticated sentence structure. Not childish."
+        elif difficulty == 2:
+            difficulty_guide = "Advanced vocabulary, metaphorical expressions, professional tone."
+        else:
+            difficulty_guide = "Highly abstract concepts, archaic/literary words, complex sentence structure with subordinate clauses."
+
+        # [Word Selection Strategy]
+        # 40% Chance: Use Fixed Database (Stability)
+        # 60% Chance: AI Selects Word (Variety)
+        use_fixed_db = random.random() < 0.4
+        
+        selected_word = None
+        word_instruction = ""
+        
+        if use_fixed_db:
+            # Select a target word from the database
+            target_list = self.WORD_DATABASE.get(category, self.WORD_DATABASE["General"] + self.WORD_DATABASE["Society"])
+            if not target_list:
+                target_list = self.WORD_DATABASE["General"]
+            selected_word = random.choice(target_list)
+            
+            word_instruction = f"""1. **Target Word**: "{selected_word}"
+           - You MUST use this exact word."""
+        else:
+            # AI Auto Selection
+            word_instruction = f"""1. **Target Word**: **SELECT YOUR OWN**.
+           - Choose a **High-Level, Sophisticated Korean Word** related to Category "{category}".
+           - It MUST be a noun or verb suitable for a logic puzzle.
+           - **EXCLUDE** common words (e.g., "사랑", "희망"). Use Professional/Academic vocabulary.
+           - Ensure it matches Difficulty Level {difficulty}."""
 
         prompt = f"""
         You are a generic puzzle generator for a game called "Context Hunter".
         
         [Goal]
         Create a **Challenging but Modern** Korean vocabulary puzzle.
+        **Difficulty Level**: {difficulty} (1=Easy, 2=Medium, 3=Hard)
+        **Difficulty Guide**: {difficulty_guide}
         
         [Task]
-        1. **Target Word**: "{selected_word}"
-           - You MUST use this exact word.
+        {word_instruction}
         
         2. **Context**: Category "{category}".
            - Use a **Sophisticated, Modern, Intellectual** tone.
@@ -120,10 +147,10 @@ class AIClient:
            - Avoid starting with conjunctions (그러나, 그래서) or vague pronouns (그, 그것) unless the subject is clear within the sentence.
 
         [CRITICAL STEPS - Chain of Thought]
-        1. **DEFINE**: First, define the exact meaning of "{selected_word}" in Korean.
+        1. **DEFINE**: Define the exact meaning of the **Target Word** in Korean.
            - Use the **Standard Dictionary Definition**.
            - For Hanja words (e.g., "불체포" -> "체포하지 않음"), interpret the meaning accurately based on its roots.
-           - **WARNING**: Beware of Homonyms. (e.g., "무료" = Free OR Boredom). Choose the one fitting the Category "{category}".
+           - **WARNING**: Beware of Homonyms. Choose the one fitting the Category "{category}".
 
         2. **SENTENCE**: Create a sentence using the word based on the definition.
            - The sentence must be grammatically PERFECT (Native Korean level).
@@ -161,9 +188,9 @@ class AIClient:
         [Output Format]
         Return JSON only:
         {{
-            "word_definition": "Definition of {selected_word}",
-            "target_word": "{selected_word}",
-            "encoded_sentence": "...sentence with {selected_word}...",
+            "word_definition": "Definition of the word",
+            "target_word": "THE_CHOSEN_WORD",
+            "encoded_sentence": "...sentence with the word...",
             "original_meaning": "...same sentence in plain Korean...",
             "difficulty_level": {difficulty},
             "category": "{category}"

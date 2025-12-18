@@ -50,7 +50,10 @@ def get_questions(db: Session, category: str = None, limit: int = 5, allow_gener
             target_category = category if category else "General"
             
             # AI 호출
-            ai_data = generate_question(category=target_category, difficulty=1)
+            # 난이도를 다양화 (1: 20%, 2: 50%, 3: 30%)
+            rand_diff = random.choices([1, 2, 3], weights=[0.2, 0.5, 0.3])[0]
+            
+            ai_data = generate_question(category=target_category, difficulty=rand_diff)
             
             if "error" in ai_data:
                 logger.error(f"AI Generation Error: {ai_data['error']}")
