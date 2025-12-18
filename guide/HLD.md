@@ -41,7 +41,7 @@ graph TD
     DB["(Database)"]
     AI["AI Service (OpenAI/Gemini)"]
 
-    User -->|HTTPS| LB
+    User -->|HTTP| LB
     LB -->|Static Files| FE
     LB -->|API Request| BE
     BE -->|SQLAlchemy| DB
@@ -82,7 +82,7 @@ graph TD
     *   **Static Server**: NodeJS `serve` (Port 65039)
     *   **DB**: MariaDB (Containerized)
 *   **AI Service Communication**:
-    *   **Protocol**: HTTPS (REST API)
+    *   **Protocol**: HTTP (REST API)
     *   **Timeout**: 10초 (Generation), 5초 (Verification)
 *   **Fallback Policy**:
     *   **API 장애 시**: 외부 AI API 호출 실패 시, 사용자에게 "AI 서비스 일시 장애" 메시지를 표시.
@@ -155,7 +155,7 @@ flowchart TD
 ### 8.2 보안 모델
 *   **인증**: JWT(JSON Web Token) 기반의 Stateless 인증
 *   **비밀번호**: Bcrypt 등을 이용한 단방향 해시 저장
-*   **통신**: HTTPS 암호화 통신 권장
+*   **통신**: HTTP 통신 (내부망 권장)
 
 ### 8.3 예상 성능
 *   **목표 TPS**: 초기 단계에서는 동시 접속자 수 100명 수준 처리 목표
