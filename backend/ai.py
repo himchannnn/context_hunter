@@ -96,38 +96,33 @@ class AIClient:
         else:
             difficulty_guide = "Highly abstract concepts, archaic/literary words, complex sentence structure with subordinate clauses."
 
-        # 난이도 보정 (요청된 난이도가 낮아도 가끔 어렵게)
-        if difficulty == 1:
-            difficulty_guide = "Common vocabulary, but sophisticated sentence structure. Not childish."
-        elif difficulty == 2:
-            difficulty_guide = "Advanced vocabulary, metaphorical expressions, professional tone."
+        # Dynamic Word Discovery Logic (50% Chance)
+        # Prevent "Pattern Fatigue" by allowing AI to pick new words
+        is_discovery_mode = random.random() < 0.5
+        selected_word_instruction = ""
+        
+        if is_discovery_mode:
+            # AI chooses the word
+            selected_word_instruction = f"""
+        1. **Target Word**: **SELECT YOURSELF**.
+           - Choose a **Sophisticated, Dictionary-Registered** Korean word related to "{category}".
+           - **CRITICAL Constraint**: The word MUST be a REAL Korean word found in standard dictionaries (Standard Korean Language Dictionary). 
+           - **NO HALLUCINATIONS**: Do not invent words. Do not combine random Hanja.
+           - Level: Equivalent to Difficulty {difficulty}.
+           """
+            selected_word_placeholder = "AI_SELECTED" # Placeholder for prompt logging
         else:
-            difficulty_guide = "Highly abstract concepts, archaic/literary words, complex sentence structure with subordinate clauses."
-
-        # [Word Selection Strategy]
-        # 40% Chance: Use Fixed Database (Stability)
-        # 60% Chance: AI Selects Word (Variety)
-        use_fixed_db = random.random() < 0.4
-        
-        selected_word = None
-        word_instruction = ""
-        
-        if use_fixed_db:
-            # Select a target word from the database
+            # Classic Mode (Fixed List)
             target_list = self.WORD_DATABASE.get(category, self.WORD_DATABASE["General"] + self.WORD_DATABASE["Society"])
             if not target_list:
-                target_list = self.WORD_DATABASE["General"]
+                 target_list = self.WORD_DATABASE["General"]
             selected_word = random.choice(target_list)
+            selected_word_placeholder = selected_word
             
-            word_instruction = f"""1. **Target Word**: "{selected_word}"
-           - You MUST use this exact word."""
-        else:
-            # AI Auto Selection
-            word_instruction = f"""1. **Target Word**: **SELECT YOUR OWN**.
-           - Choose a **High-Level, Sophisticated Korean Word** related to Category "{category}".
-           - It MUST be a noun or verb suitable for a logic puzzle.
-           - **EXCLUDE** common words (e.g., "사랑", "희망"). Use Professional/Academic vocabulary.
-           - Ensure it matches Difficulty Level {difficulty}."""
+            selected_word_instruction = f"""
+        1. **Target Word**: "{selected_word}"
+           - You MUST use this exact word.
+            """
 
         prompt = f"""
         You are a generic puzzle generator for a game called "Context Hunter".
@@ -138,7 +133,7 @@ class AIClient:
         **Difficulty Guide**: {difficulty_guide}
         
         [Task]
-        {word_instruction}
+        {selected_word_instruction}
         
         2. **Context**: Category "{category}".
            - Use a **Sophisticated, Modern, Intellectual** tone.
@@ -146,11 +141,27 @@ class AIClient:
            - **CRITICAL**: The sentence must be **Self-Contained**. It should be fully understandable without any prior context.
            - Avoid starting with conjunctions (그러나, 그래서) or vague pronouns (그, 그것) unless the subject is clear within the sentence.
 
+           **[STYLE GUIDE - STRICT COMPLIANCE REQUIRED]**
+           1. **No Translationese (번역투 금지)**: Do NOT use sentence structures that look like direct translations from English.
+              - Bad: "그것은 그에 의해 발견되었다." (Passive voice often unnatural in Korean)
+              - Good: "그가 그것을 발견했다." or "그것이 발견되었다." (Active or natural passive)
+           2. **Avoid Vague Pronouns**: Do NOT start sentences with "그는", "그녀는", "그것은" unless the referent is OBVIOUS within the same sentence. Use specific nouns (e.g., "철수는", "정부는", "이 사건은").
+           3. **Subject-Predicate Agreement**: Ensure the sentence has a clear subject and matching verb ending.
+           4. **Natural Ending**: Use diverse sentence endings (~했다, ~인가?, ~할 것이다), not just repetitively (~이다).
+           5. **Sentence Length**: The sentence MUST be **rich and descriptive** (at least 20-30 words, 40+ characters). Avoid short, choppy sentences.
+           6. **Structure**: Use **subordinate clauses** (because, although, while) to add depth. Don't just make a simple subject-verb sentence.
+           
         [CRITICAL STEPS - Chain of Thought]
-        1. **DEFINE**: Define the exact meaning of the **Target Word** in Korean.
+        1. **DICTIONARY CHECK (Crucial)**: 
+           - **Before** generating anything, ask yourself: "Is 'Target Word' in the Standard Korean Language Dictionary (표준국어대사전)?"
+           - If NO: **STOP** and select a different word immediately. Do NOT creatively invent words.
+           - If YES: Proceed to define it.
+           
+        2. **DEFINE**: Define the exact meaning of the **Target Word** in Korean.
            - Use the **Standard Dictionary Definition**.
+           - **Alignment Check**: Ensure the sentence you create uses this EXACT definition. Do not use a metaphorical meaning if it contradicts the dictionary definition.
            - For Hanja words (e.g., "불체포" -> "체포하지 않음"), interpret the meaning accurately based on its roots.
-           - **WARNING**: Beware of Homonyms. Choose the one fitting the Category "{category}".
+           - **WARNING**: Beware of Homonyms. (e.g., "무료" = Free OR Boredom). Choose the one fitting the Category "{category}".
 
         2. **SENTENCE**: Create a sentence using the word based on the definition.
            - The sentence must be grammatically PERFECT (Native Korean level).
@@ -188,9 +199,9 @@ class AIClient:
         [Output Format]
         Return JSON only:
         {{
-            "word_definition": "Definition of the word",
-            "target_word": "THE_CHOSEN_WORD",
-            "encoded_sentence": "...sentence with the word...",
+            "word_definition": "Definition of Target Word",
+            "target_word": "Target Word",
+            "encoded_sentence": "...sentence containing the Target Word...",
             "original_meaning": "...same sentence in plain Korean...",
             "difficulty_level": {difficulty},
             "category": "{category}"
@@ -335,11 +346,20 @@ class AIClient:
         {json.dumps(question_data, ensure_ascii=False)}
 
         [Checklist]
-        1. **Grammar & Sense**: Is `encoded_sentence` a PERFECT, logical, and natural Korean sentence? 
-           - **Reject** artificial "textbook examples" (e.g., "철수는 밥을 먹었다"). 
-           - **Accept** only professional, realistic sentences (e.g., "정부는 이번 사태에 대해 유감을 표명했다").
-        2. **Difficulty Check**: Is `encoded_sentence` sophisticated enough? (If too simple, make it more formal/metaphorical).
-        3. **Vocabulary Distinction**: Does `original_meaning` clearly explain the *difficult* words?
+        1. **Grammar & Sense (Chain of Thought)**: 
+           - Step 1: Read the sentence aloud. Does it flow naturally?
+           - Step 2: **Broken Sentence Detector**: DOES it have a Subject and a Predicate? (Reject fragments like "철수는 밥을.").
+           - Step 3: **Translationese Check**: DOES it sound like a translated English sentence? (Reject "It was done by him" styles).
+        
+        2. **Length & Complexity**:
+           - **Too Short?**: If the sentence is less than 12 words, REWRITE it to add more context and description.
+           - **Too Simple?**: If it's just "Subject + Object + Verb", add a subordinate clause to make it sophisticated.
+           
+        3. **Usage Accuracy (Context Check)**: Does the word `target_word` fit the context perfectly?
+           - **Check Definition**: Read the `word_definition`. Does the sentence actually use the word in that sense?
+           - **Reject Mismatch**: If the definition says "A" but the sentence implies "B" (e.g. Homonym error), **FIX** the definition or the sentence to match.
+           
+        4. **Vocabulary Distinction**: Does `original_meaning` clearly explain the *difficult* words?
            - It is OK to share common words (like 조사, 어미, simple verbs).
            - *Check*: Did it paraphrase the KEY difficult word? (e.g. "교착" -> "꼼짝 못하는").
         4. **Opposite Check**: Does the meaning accidentally say the opposite? (e.g., "Good" vs "Not Good"). Fix it to match exactly.

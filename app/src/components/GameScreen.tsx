@@ -20,7 +20,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState('');
-  const [similarity, setSimilarity] = useState(0);
+  const [grade, setGrade] = useState<string>(''); // 등급State 추가
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
       setShowFeedback(false);
       setFeedback(null); // 피드백 초기화
       setCorrectAnswer('');
-      setSimilarity(0);
+      setGrade('');
     }
   }, [currentRound, gameMode, lives, maxStreak, onGameEnd, playSound, questions.length, results, totalRounds, difficulty]);
 
@@ -156,7 +156,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
 
       setIsCorrect(response.isCorrect);
       setCorrectAnswer(response.correctAnswer || '');
-      setSimilarity(response.similarity || 0);
+      setGrade(response.grade || ''); // 등급 저장
       setFeedback(response.feedback || null); // 피드백 저장
       setShowFeedback(true);
 
@@ -345,7 +345,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
               {isCorrect ? '정답입니다! ✓' : '아쉽습니다 ✗'}
             </div>
             <div className="text-lg mb-4 text-foreground">
-              유사도: {similarity}%
+              평가: <span className="font-bold">{grade || "판정 불가"}</span>
             </div>
             <div className="space-y-2 text-sm">
               <div className="text-muted-foreground">

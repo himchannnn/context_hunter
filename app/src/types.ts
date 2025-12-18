@@ -23,6 +23,7 @@ export interface VerifyResponse {
     similarity: number;
     correctAnswer?: string;
     feedback: string;
+    grade?: string;
 }
 
 // 게임 결과 인터페이스

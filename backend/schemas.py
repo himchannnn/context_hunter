@@ -74,6 +74,7 @@ class VerifyAnswerResponse(BaseModel):
     feedback: Optional[str] = None
     correctAnswer: Optional[str] = None
     similarity: float
+    grade: Optional[str] = None
 
 # 방명록/랭킹 스키마 (Guestbook/Ranking Schemas)
 class GuestbookBase(BaseModel):

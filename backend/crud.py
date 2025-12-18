@@ -229,11 +229,21 @@ def verify_answer(db: Session, question_id: str, user_answer: str, user_id: int 
         db.add(attempt)
         db.commit()
         
+        # Calculate Grade
+        grade = "미흡"
+        if ai_result["similarity_score"] >= 90:
+            grade = "최상"
+        elif ai_result["similarity_score"] >= 70:
+            grade = "우수"
+        elif ai_result["similarity_score"] >= 50:
+            grade = "보통"
+
         return schemas.VerifyAnswerResponse(
-            isCorrect=is_correct,
-            similarity=round(similarity, 1),
-            correctAnswer=question.correct_meaning if not is_correct else None,
-            feedback=feedback
+            isCorrect=ai_result["is_correct"],
+            feedback=ai_result.get("feedback"),
+            correctAnswer=question.correct_meaning, # 정답 공개
+            similarity=float(ai_result["similarity_score"]),
+            grade=grade
         )
     except Exception as e:
         logger.error(f"verify_answer FAILED: {str(e)}")

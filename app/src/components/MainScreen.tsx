@@ -46,7 +46,7 @@ export default function MainScreen({ onSelectMode, onOpenNotes, onTerms, onPriva
           </li>
           <li className="flex items-start gap-2">
             <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">3</span>
-            <span>유사도 50% 이상일 경우 정답으로 인정!</span>
+            <span>우수한 답변이면 정답으로 인정!</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="bg-blue-100 text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mt-0.5">4</span>
