@@ -129,8 +129,7 @@ classDiagram
 | `ERR_AI_SERVICE_TIMEOUT` | 503 | AI 서비스 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요. |
 
 
-### 3.5 Sequence Diagram (Answer Verification)
-### 3.5 Sequence Diagram (Answer Verification)
+### 3.7 Sequence Diagram (Answer Verification)
 ```mermaid
 sequenceDiagram
     participant User
@@ -155,7 +154,7 @@ sequenceDiagram
     
     BE->>BE: Preprocess Answer (trim, lower)
     
-    BE->>AI: Request Verification (Llama 3.1)
+    BE->>AI: Request Verification (Gemma2)
     activate AI
     alt AI Service Error / Timeout
         AI-->>BE: Error
@@ -200,12 +199,30 @@ sequenceDiagram
 2.  **Process**:
     *   DB에서 `questionId`로 문제 조회 (`correct_meaning` 획득)
     *   `userAnswer` 전처리 (trim, lowercase)
-    *   **AI API 호출**: Llama 3.1에게 두 문장의 의미적 유사성 판별 요청 (Prompt Engineering)
+    *   **AI API 호출**: Gemma2에게 두 문장의 의미적 유사성 판별 요청.
+    *   **Prompt Strategy**:
+        *   **Role**: "Strict Evaluator" (엄격한 평가자) 페르소나 부여
+        *   **Criteria**: 핵심 의미(Core Meaning), 단순화(Simplification), 정확성(Accuracy) 3가지 기준 제시
+        *   **Scoring**: 0~100점 사이의 점수 산출 (50점 이상 정답, 80점 이상 우수)
+        *   **Response Format**: JSON 강제 (`response_format={"type": "json_object"}`)를 통해 파싱 안정성 확보
     *   **Response Parsing**: AI가 반환한 JSON (`is_correct`, `score`, `feedback`) 파싱
     *   `Attempt` 테이블에 로그 저장
 3.  **Output**: `isCorrect`, `similarity`, `feedback`
 
-### 5.2 랭킹 업데이트 로직
+### 5.2 문제 생성 로직 (Question Generation)
+1.  **Input**: `category`, `difficulty`
+2.  **Process**:
+    *   **Keyword Selection**: 카테고리별 DB(`WORD_DATABASE`)에서 난이도 있는 단어 랜덤 선택
+    *   **Phrase Generation (Prompting)**:
+        *   **Role**: "Puzzle Generator" & "Professional Writer"
+        *   **Task**: 선택된 단어를 포함한 '지적인(Intellectual)' 문장 생성 및 이를 쉬운 말로 푼 '정답(Model Answer)' 생성
+        *   **Constraint**: 고어/현학적 표현 배제, 현대적 문해력 중심
+    *   **Self-Correction (Chain-of-Thought)**:
+        *   생성된 결과를 "Senior Editor" 페르소나에게 전달하여 자체 검증
+        *   문법 오류, 난이도 적절성, 반대 의미 여부, 한자어 포함 여부 체크 후 재작성
+3.  **Output**: `encoded_sentence`, `original_meaning`
+
+### 5.3 랭킹 업데이트 로직
 1.  **Input**: `nickname`, `score`, `max_streak`
 2.  **Process**:
     *   `nickname`으로 `guestbook` 테이블 조회
@@ -223,12 +240,12 @@ sequenceDiagram
 ### 6.2 환경 변수 (.env)
 *   `SECRET_KEY`: JWT 서명용 비밀키
 *   `DATABASE_URL`: DB 연결 문자열 (예: `sqlite:///./context_hunter.db`)
-*   `OPENAI_API_KEY`: AI API 키 (Llama 3.1 사용 시)
+*   `OPENAI_API_KEY`: AI API 키 (Gemma2 사용 시)
 *   `AI_BASE_URL`: AI API Base URL (예: Groq, Ollama 등)
-*   `AI_MODEL_NAME`: 사용할 모델명 (Default: llama-3.1-8b-instant)
+*   `AI_MODEL_NAME`: 사용할 모델명 (Default: gemma2)
 
 ### 6.3 Logging Policy
-*   **Access Log**: API 요청/응답 시간, 상태 코드, 클라이언트 IP (Nginx/Uvicorn 레벨)
+*   **Access Log**: API 요청/응답 시간, 상태 코드, 클라이언트 IP (serve/Uvicorn 레벨)
 *   **Application Log**:
     *   **INFO**: 주요 사용자 액션 (로그인, 게임 시작, 랭킹 등록)
     *   **WARNING**: AI 서비스 지연, 잘못된 입력값 반복
@@ -239,12 +256,12 @@ sequenceDiagram
     *   DB: SQLite (`context_hunter.db`)
     *   Debug: `True` (상세 에러 메시지 노출)
     *   CORS: `*` (모든 출처 허용)
-*   **Production (Docker)**:
-    *   **Orchestration**: Docker Compose
-    *   **Reverse Proxy**: Nginx (Port 65039 -> 80)
-    *   DB: MariaDB (Containerized)
-    *   Debug: `False`
-    *   CORS: 프론트엔드 도메인만 허용
+*   **Production (Podman)**:
+    *   **Orchestration**: Podman Compose
+    *   **Static Server**: NodeJS `serve` (Port 65039)
+    *   **DB**: MariaDB (Containerized)
+    *   **Debug**: `False`
+    *   **CORS**: 프론트엔드 도메인만 허용
 
 
 ## 7. 제한사항 및 예외 처리

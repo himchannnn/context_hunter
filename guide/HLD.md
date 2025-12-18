@@ -14,7 +14,7 @@
     *   **일일 모드**: 매일 제공되는 10문제 풀이 및 보상(크레딧) 획득
     *   **도전 모드**: 무한 문제 풀이 (3회 오답 시 종료), 랭킹 도전
 *   **상점 및 테마**: 크레딧을 소모하여 테마(배경, 색상 등) 구매 및 장착
-*   **AI 분석**: 사용자 답안의 문맥 유사도 분석 및 정답 판별 (Llama 3.1 8b 기반)
+*   **AI 분석**: 사용자 답안의 문맥 유사도 분석 및 정답 판별 (Gemma2 기반)
 *   **학습 보조**: 오답 노트 저장 및 복습 기능
 *   **랭킹 시스템**: 도전 모드 점수 기반 글로벌 랭킹 및 명예의 전당
 *   **소셜 공유**: 게임 결과 공유 기능
@@ -35,7 +35,7 @@
 ```mermaid
 graph TD
     User["User (Browser)"]
-    LB["Nginx (Reverse Proxy)"]
+    LB["NodeJS serve (Static Server)"]
     FE["Frontend (React SPA)"]
     BE["Backend API (FastAPI)"]
     DB["(Database)"]
@@ -74,9 +74,13 @@ graph TD
 
 ### 4.3 외부 서비스
 *   **AI Engine**: 
-    *   **Generation & Verification**: Llama 3.1 8b (via OpenAI-compatible API)
+    *   **Generation & Verification**: Gemma2 (via OpenAI-compatible API)
 
 ### 4.4 외부 인터페이스 및 장애 대응 (External Interfaces)
+*   **Production (Podman)**:
+    *   **Orchestration**: Podman Compose (or Kubernetes)
+    *   **Static Server**: NodeJS `serve` (Port 65039)
+    *   **DB**: MariaDB (Containerized)
 *   **AI Service Communication**:
     *   **Protocol**: HTTPS (REST API)
     *   **Timeout**: 10초 (Generation), 5초 (Verification)
@@ -96,7 +100,7 @@ flowchart TD
     
     subgraph Backend Services
         BE -->|3. Get Correct Meaning| DB["(Database)"]
-        BE -->|4. Request Verification| AI["AI Engine (Llama 3-1)"]
+        BE -->|4. Request Verification| AI["AI Engine (Gemma2)"]
         AI -- Similarity Score --> BE
         BE -->|5. Save Attempt Log| DB
     end
@@ -145,8 +149,8 @@ flowchart TD
 ## 8. 성능/보안/확장성 고려
 
 ### 8.1 확장성 전략
-*   **Stateless Backend**: REST API 구조로 서버 수평 확장(Scale-out) 용이 (Docker Replica 활용)
-*   **Frontend 분리**: Nginx를 통한 정적 리소스 서빙 및 캐싱 최적화
+*   **Stateless Backend**: REST API 구조로 서버 수평 확장(Scale-out) 용이 (Podman Replica 활용)
+*   **Frontend 분리**: `serve`를 통한 정적 리소스 서빙 및 캐싱 최적화
 
 ### 8.2 보안 모델
 *   **인증**: JWT(JSON Web Token) 기반의 Stateless 인증
