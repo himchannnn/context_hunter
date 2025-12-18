@@ -45,7 +45,7 @@ graph TD
     LB -->|Static Files| FE
     LB -->|API Request| BE
     BE -->|SQLAlchemy| DB
-    BE -->|External API| AI
+    BE -->|Local Execution| AI
 ```
 
 ### 3.2 계층 구조 (Layered Architecture)
@@ -74,7 +74,7 @@ graph TD
 
 ### 4.3 외부 서비스
 *   **AI Engine**: 
-    *   **Generation & Verification**: Gemma2 (via OpenAI-compatible API)
+    *   **Generation & Verification**: Gemma2 (Running Locally via Ollama/vLLM)
 
 ### 4.4 외부 인터페이스 및 장애 대응 (External Interfaces)
 *   **Production (Podman)**:
@@ -82,10 +82,10 @@ graph TD
     *   **Static Server**: NodeJS `serve` (Port 65039)
     *   **DB**: MariaDB (Containerized)
 *   **AI Service Communication**:
-    *   **Protocol**: HTTP (REST API)
-    *   **Timeout**: 10초 (Generation), 5초 (Verification)
+    *   **Protocol**: HTTP (Internal Localhost Communication)
+    *   **Timeout**: 30초 (Generation - Local GPU Dependent), 10초 (Verification)
 *   **Fallback Policy**:
-    *   **API 장애 시**: 외부 AI API 호출 실패 시, 사용자에게 "AI 서비스 일시 장애" 메시지를 표시.
+    *   **API 장애 시**: 로컬 AI 모델 로드 실패 시, 사용자에게 "AI 엔진 초기화 중" 메시지를 표시.
     *   **DB 장애 시**: 읽기 전용 모드로 전환하거나 점검 중 페이지 표시.
 
 
@@ -163,7 +163,7 @@ flowchart TD
 
 ## 9. 제한사항 및 가정
 *   **AI 비용/자원**: 
-    *   Llama 3.1: API 호출 비용 또는 호스팅 비용 발생
-    *   Embedding: 로컬 서버 메모리(약 1GB) 및 CPU 자원 소모
-*   **네트워크**: 문제 생성 시 인터넷 연결 필수 (로컬 임베딩은 오프라인 가능)
+    *   Gemma2: 로컬 GPU 메모리(VRAM 8GB 이상 권장) 및 시스템 RAM 소모
+    *   Embedding: 로컬 서버 자원 소모
+*   **네트워크**: 초기 모델 다운로드 시에만 필요 (운영 시 오프라인 가능)
 *   **브라우저**: 최신 모던 브라우저(ES6+ 지원) 환경 가정

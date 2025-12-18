@@ -126,7 +126,7 @@ classDiagram
 | `ERR_USER_DUPLICATE` | 400 | 이미 존재하는 사용자명입니다. |
 | `ERR_AUTH_FAILED` | 401 | 아이디 또는 비밀번호가 일치하지 않습니다. |
 | `ERR_QUESTION_NOT_FOUND` | 404 | 요청한 문제를 찾을 수 없습니다. |
-| `ERR_AI_SERVICE_TIMEOUT` | 503 | AI 서비스 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요. |
+| `ERR_AI_SERVICE_TIMEOUT` | 503 | AI 엔진 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요. |
 
 
 ### 3.7 Sequence Diagram (Answer Verification)
@@ -158,7 +158,7 @@ sequenceDiagram
     activate AI
     alt AI Service Error / Timeout
         AI-->>BE: Error
-        BE-->>FE: 503 Service Unavailable
+        BE-->>FE: 503 Service Unavailable (Local Engine Busy)
     else Success
         AI-->>BE: JSON {is_correct, score, feedback}
     end
@@ -240,15 +240,14 @@ sequenceDiagram
 ### 6.2 환경 변수 (.env)
 *   `SECRET_KEY`: JWT 서명용 비밀키
 *   `DATABASE_URL`: DB 연결 문자열 (예: `sqlite:///./context_hunter.db`)
-*   `OPENAI_API_KEY`: AI API 키 (Gemma2 사용 시)
-*   `AI_BASE_URL`: AI API Base URL (예: Groq, Ollama 등)
-*   `AI_MODEL_NAME`: 사용할 모델명 (Default: gemma2)
+*   `AI_BASE_URL`: Local AI URL (예: `http://localhost:11434/v1` - Ollama)
+*   `AI_MODEL_NAME`: 사용할 로컬 모델명 (Default: gemma2)
 
 ### 6.3 Logging Policy
 *   **Access Log**: API 요청/응답 시간, 상태 코드, 클라이언트 IP (serve/Uvicorn 레벨)
 *   **Application Log**:
     *   **INFO**: 주요 사용자 액션 (로그인, 게임 시작, 랭킹 등록)
-    *   **WARNING**: AI 서비스 지연, 잘못된 입력값 반복
+    *   **WARNING**: AI 생성 속도 저하, 잘못된 입력값 반복
     *   **ERROR**: 500 에러 발생 시 Stack Trace, DB 연결 실패
 
 ### 6.4 Environment Configuration
@@ -267,4 +266,4 @@ sequenceDiagram
 ## 7. 제한사항 및 예외 처리
 *   **API Error Handling**: `HTTPException`을 사용하여 명확한 상태 코드(400, 401, 404, 500) 반환
 *   **DB Connection**: `SessionLocal`을 사용하여 요청별 세션 생성 및 종료 (`yield` 패턴)
-*   **AI API Failure**: 외부 API 호출 실패 시 503 에러 반환 (로컬 Fallback 없음)
+*   **AI Engine Failure**: 로컬 AI 프로세스 다운 시 503 에러 반환. (자동 재시작 스크립트 권장)
