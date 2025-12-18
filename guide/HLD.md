@@ -92,7 +92,7 @@ graph TD
 ## 5. 데이터 흐름 (Data Flow)
 
 ### 5.1 주요 기능 단위 데이터 흐름 (정답 검증)
-### 5.1 주요 기능 단위 데이터 흐름 (Data Flow Diagram)
+사용자가 답안을 제출했을 때, Frontend, Backend, Database, 그리고 Local AI Engine 간의 상호작용 및 데이터 흐름을 나타냅니다.
 ```mermaid
 flowchart TD
     User([User]) -->|1. Submit Answer| FE["Frontend"]
