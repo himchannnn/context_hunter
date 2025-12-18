@@ -261,6 +261,7 @@ sequenceDiagram
     *   **DB**: MariaDB (Containerized)
     *   **Debug**: `False`
     *   **CORS**: 프론트엔드 도메인만 허용
+    *   **AI Engine Config**: `OLLAMA_KEEP_ALIVE=2m` (마지막 요청 후 2분간 모델 VRAM 유지)
 
 
 ## 7. 제한사항 및 예외 처리
