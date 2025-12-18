@@ -109,7 +109,6 @@ classDiagram
 | Method | Endpoint | Request Body | Response Body | 설명 |
 | :--- | :--- | :--- | :--- | :--- |
 | GET | `/api/rankings` | - | `List[RankingEntry]` | 랭킹 조회 |
-
 | POST | `/api/guestbook` | `{nickname(2-10자, 비속어 금지), score}` | - | 랭킹(방명록) 저장 |
 
 ### 3.5 Daily & Shop API
