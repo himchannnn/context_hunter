@@ -25,12 +25,6 @@ cd backend
 pip install -r requirements.txt
 ```
 
-**데이터베이스 초기화 (최초 실행 시 필수):**
-
-```bash
-python seed.py
-```
-
 서버를 실행합니다:
 
 ```bash
