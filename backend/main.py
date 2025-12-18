@@ -173,6 +173,16 @@ def read_questions(category: Optional[str] = None, difficulty: int = 1, limit: i
         print(f"ERROR in read_questions: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# 일일 문제 조회 엔드포인트
+@app.get("/api/questions/daily", response_model=schemas.QuestionsResponse)
+def read_daily_questions(category: str = None, db: Session = Depends(get_db)):
+    try:
+        questions = crud.get_daily_questions(db, category=category)
+        return {"questions": questions}
+    except Exception as e:
+        print(f"ERROR in read_daily_questions: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # 일일 진행 상황 조회
 @app.get("/api/daily-progress", response_model=schemas.DailyProgressResponse)
 def get_daily_progress(date: str, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):

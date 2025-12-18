@@ -39,7 +39,7 @@ class AIClient:
             "공시", "상장", "부도", "채무", "융통", "교부", "조세", "징수", "체납", "포탈",
             "낙수효과", "펀더멘털", "유동성", "재정", "적자", "흑자", "수지", "금리", "환율", "물가"
         ],
-        "IT": [
+        "IT/Science": [
             "도래", "혁신", "사문화", "종속", "가속화", "태동", "과도기", "범용", "호환", "격차", 
             "편중", "난제", "알고리즘", "매커니즘", "인프라", "구축", "선점", "우위", "특이점", "가상",
             "보안", "취약점", "암호화", "복호화", "대역폭", "지연", "생태계", "플랫폼", "인터페이스", "직관적"
@@ -49,20 +49,34 @@ class AIClient:
             "도외시", "야기", "간과", "주지", "기인", "결부", "만연", "팽배", "조장", "방관",
             "경각심", "불감증", "양극화", "소외", "배제", "포용", "공존", "상생", "갈등", "봉합"
         ],
-        "Culture": [
+        "Life/Culture": [
             "향유", "영위", "귀감", "반향", "조명", "각색", "오마주", "모티프", "정체성", "다양성",
             "보편성", "특수성", "심미적", "서사", "담론", "비평", "사조", "풍미", "전유", "향수"
         ],
-        "History": [
-            "격변", "사료", "고증", "왜곡", "기술", "편찬", "계승", "유추", "반면교사", "타산지석",
-            "흥망성쇠", "기원", "발상지", "유래", "전철", "답습", "청산", "굴곡", "질곡", "태평성대"
+        "World": [
+            "패권", "분쟁", "협약", "망명", "규탄", "제재", "동맹", "우방", "적대", "긴장",
+            "완화", "중재", "개입", "철수", "파병", "난민", "참상", "인도적", "지원", "원조",
+            "국경", "영토", "주권", "침해", "반군", "내전", "쿠데타", "독재", "선거", "혁명"
         ],
+
         "General": [
             "고지식", "기락", "갈무리", "유명세", "일가견", "취지", "단초", "빌미", "여지", "개연성", 
             "타당성", "실효성", "가시화", "구체화", "형해화", "사문화", "유야무야", "지지부진", "전무후무", "미봉책",
             "임시방편", "궁여지책", "속수무책", "자포자기", "자가당착", "모순", "역설", "아이러니", "딜레마", "트리거"
         ]
     }
+
+    def _get_role_for_category(self, category: str) -> str:
+        roles = {
+            "Politics": "Political Journalist",
+            "Economy": "Financial Analyst",
+            "IT/Science": "Tech Columnist",
+            "Society": "Social Commentator",
+            "Life/Culture": "Essayist",
+            "World": "Foreign Correspondent",
+            "General": "Novelist"
+        }
+        return roles.get(category, "Writer")
 
     def generate_question(self, category: str, difficulty: int = 1) -> Dict[str, Any]:
         """
@@ -100,34 +114,56 @@ class AIClient:
            - You MUST use this exact word.
         
         2. **Context**: Category "{category}".
-           - Use a **Sophisticated, Modern, Intellectual** tone (e.g., Quality News, Editorial, University Textbook).
-           - The sentence should feel "difficult" but **readable** to an educated native speaker (University Liberal Arts Level).
-           - **AVOID**: Archaic(고어), Punditry(현학적), or overly Abstract/Philosophical expressions unless necessary.
-           - Focus on **Literacy (문해력)**: Clear, logical, but with high-level vocabulary.
+           - Use a **Sophisticated, Modern, Intellectual** tone.
+           - Focus on **Literacy (문해력)**.
+           - **CRITICAL**: The sentence must be **Self-Contained**. It should be fully understandable without any prior context.
+           - Avoid starting with conjunctions (그러나, 그래서) or vague pronouns (그, 그것) unless the subject is clear within the sentence.
 
-        3. **Create Sentence**: 
-           - Write a sentence where "{selected_word}" is the pivot of the meaning.
-           - Example style: "작위적인 연출은 오히려 관객의 몰입을 방해한다." (Clean, Sophisticated).
+        [CRITICAL STEPS - Chain of Thought]
+        1. **DEFINE**: First, define the exact meaning of "{selected_word}" in Korean.
+           - Use the **Standard Dictionary Definition**.
+           - For Hanja words (e.g., "불체포" -> "체포하지 않음"), interpret the meaning accurately based on its roots.
+           - **WARNING**: Beware of Homonyms. (e.g., "무료" = Free OR Boredom). Choose the one fitting the Category "{category}".
+
+        2. **SENTENCE**: Create a sentence using the word based on the definition.
+           - The sentence must be grammatically PERFECT (Native Korean level).
+           - No awkward translations or nonsense.
            
-        4. **Model Answer (CRITICAL)**: 
-           - The `original_meaning` MUST be a **Natural Paraphrase**.
-           - **CONSTRAINT**: You MAY use common verbs/adjectives from the encoded sentence if they are simple (e.g., "있다", "하다", "같다").
-           - **FOCUS**: Paraphrase ONLY the difficult/abstract words (like "{selected_word}") into easier terms.
-           - Do not over-simplify to the point of being childish. Keep the tone natural but clear.
-           - Structure: Keep the sentence structure similar so it's easy to compare.
-           - **NO EXPLANATION**: Do not say "This means...". Just the translated sentence.
+        3. **PARAPHRASE**: Create the "Model Answer" by changing ONLY the difficult word to plain Korean.
 
+        [Few-Shot Examples]
+        - Input Word: "교착" (Deadlock/Stalemate)
+          Output:
+          {{
+            "word_definition": "어떤 상태가 변하지 않고 그대로 머물러 있는 것",
+            "encoded_sentence": "노사 간의 협상이 교착 상태에 빠졌다.",
+            "original_meaning": "노사 간의 협상이 꼼짝 못하는 상태에 빠졌다.",
+             ...
+          }}
+
+        - Input Word: "연금" (Pension vs Confinement) -> Context: Society (Pension)
+          Output:
+          {{
+            "word_definition": "노후 생활 안정을 위해 지급받는 돈",
+            "encoded_sentence": "그는 퇴직 후 매달 연금을 수령하고 있다.",
+            "original_meaning": "그는 퇴직 후 매달 노후 생활비를 수령하고 있다.",
+             ...
+          }}
+          
         [Constraints]
-        1. **DIFFICULTY**: The `encoded_sentence` must be challenging (Advanced Vocabulary).
-        2. **CLARITY**: `original_meaning` should clearly explain the difficult parts using everyday Korean.
-        3. **NO OPPOSITE**: Ensure the meaning is exactly the same, not the opposite.
-        4. **NO NONSENSE**: Standard Korean only. No scrambled text.
+        1. **Grammar**: Must be 100% natural Korean. No broken particles (은/는/이/가).
+        2. **Semantic**: "encoded_sentence" and "original_meaning" must mean the SAME thing.
+        3. **No Hanja**: Do not use Chinese characters in the text.
+        4. **Naturalness**: If the sentence feels artificial, rewrite it to be simpler.
+        5. **NO MARKDOWN**: STRICTLY FORBIDDEN. Do NOT use **bold**, *italic* or any other symbols. Return PLAIN TEXT only.
+        6. **Standalone**: The sentence must provide enough context itself to be understood. Avoid vague "It" or "He" without antecedents.
 
         [Output Format]
         Return JSON only:
         {{
-            "original_sentence": "{selected_word}",
-            "encoded_sentence": "...sophisticated sentence with {selected_word}...",
+            "word_definition": "Definition of {selected_word}",
+            "target_word": "{selected_word}",
+            "encoded_sentence": "...sentence with {selected_word}...",
             "original_meaning": "...same sentence in plain Korean...",
             "difficulty_level": {difficulty},
             "category": "{category}"
@@ -159,7 +195,12 @@ class AIClient:
             content = content.strip()
             
             data = json.loads(content)
-            return self._recursive_sanitize(data)
+            data = self._recursive_sanitize(data)
+            
+            # Apply Self-Correction / Verification Loop
+            data = self._verify_and_fix_question(data)
+            
+            return data
         except Exception as e:
             print(f"Error generating question: {e}")
             return {"error": str(e)}
@@ -197,7 +238,8 @@ class AIClient:
         - **Core Meaning**: Does the user understand the sophisticated words in the Source Text?
         - **Simplification**: The user is trying to explain the difficult text in easier words.
         - **Accuracy**: The user message must convey the SAME intent as the Source Text.
-        
+        - **Idioms/Metaphors**: Accept common Korean idioms if they mean the same thing. (e.g., "옷을 벗다" = "Resign/Quit", "발이 넓다" = "Has many connections").
+
         [Scoring Guidelines]
         - **100**: Perfect understanding and paraphrasing.
         - **80-99**: Good understanding, slightly different nuance but correct core meaning.
@@ -266,7 +308,9 @@ class AIClient:
         {json.dumps(question_data, ensure_ascii=False)}
 
         [Checklist]
-        1. **Grammar & Sense**: Is `encoded_sentence` a PERFECT, logical Korean sentence? (If strictly nonsense, REWRITE it).
+        1. **Grammar & Sense**: Is `encoded_sentence` a PERFECT, logical, and natural Korean sentence? 
+           - **Reject** artificial "textbook examples" (e.g., "철수는 밥을 먹었다"). 
+           - **Accept** only professional, realistic sentences (e.g., "정부는 이번 사태에 대해 유감을 표명했다").
         2. **Difficulty Check**: Is `encoded_sentence` sophisticated enough? (If too simple, make it more formal/metaphorical).
         3. **Vocabulary Distinction**: Does `original_meaning` clearly explain the *difficult* words?
            - It is OK to share common words (like 조사, 어미, simple verbs).
@@ -277,12 +321,25 @@ class AIClient:
            - Even if the word is difficult, write it in Hangul.
         6. **Semantic Consistency**: Does `original_meaning` (Model Answer) mean EXACTLY the same thing as `encoded_sentence`?
            - If there is a slight shift in meaning, FIX `original_meaning` to align perfectly with `encoded_sentence`.
+        7. **No Markdown**: Ensure NO markdown syntax (**bold**, *italics*) exists in the values.
+        8. **Context Independence**: Does the sentence make sense ALONE? 
+           - Failed Example: "그러나 그는 그것을 거절했다." (Who is he? What is it? Why however?)
+           - Fixed Example: "철수는 제안이 부당하다고 생각하여 그것을 거절했다." (Subject and reason are clear).
 
         [Action]
         - If PERFECT: Return the input JSON exactly as is.
         - If FLAWED: Fix the errors (Rewrite the sentence if it is gibberish) and return the corrected JSON.
 
-        Return JSON only.
+        [Output Format]
+        Return JSON only. The structure MUST be exactly as follows:
+        {{
+            "word_definition": "...",
+            "target_word": "...", 
+            "encoded_sentence": "...",
+            "original_meaning": "...",
+            "difficulty_level": int,
+            "category": "..."
+        }}
         """
 
         try:
@@ -316,10 +373,32 @@ class AIClient:
 
     def _sanitize_string(self, content: str) -> str:
         """
-        Removes surrogate characters and other invalid unicode to prevent encoding errors.
+        Removes markdown syntax (bold, italic, code blocks) and invalid unicode.
         """
+        import re
         try:
-            return content.encode('utf-8', 'replace').decode('utf-8')
+            # 1. Decode to UTF-8 to handle encoding issues
+            text = content.encode('utf-8', 'replace').decode('utf-8')
+            
+            # 2. Remove Code Blocks (```json ... ```) - Already handled outside but safe to double check
+            text = re.sub(r'```(\w+)?', '', text) 
+            text = re.sub(r'```', '', text)
+            
+            # 3. Remove Bold/Italic Markdown (**text**, *text*, __text__, _text_)
+            # Keep the inner text, just remove the markers.
+            # Handles **bold** -> bold
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            # Handles *italic* -> italic
+            text = re.sub(r'\*(.*?)\*', r'\1', text)
+            # Handles __bold__ -> bold
+            text = re.sub(r'__(.*?)__', r'\1', text)
+            # Handles _italic_ -> italic
+            text = re.sub(r'_(.*?)_', r'\1', text)
+            
+            # 4. Remove `code` inline markers
+            text = re.sub(r'`(.*?)`', r'\1', text)
+            
+            return text.strip()
         except Exception:
             return ""
 

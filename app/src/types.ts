@@ -14,6 +14,7 @@ export interface Question {
     success_rate: number;
     correct_meaning?: string;
     category?: string;
+    created_at?: string;
 }
 
 // 정답 확인 응답 인터페이스

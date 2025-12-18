@@ -12,6 +12,7 @@ class QuestionBase(BaseModel):
 class Question(QuestionBase):
     correct_count: int
     total_attempts: int
+    created_at: datetime
     success_rate: float
 
     class Config:

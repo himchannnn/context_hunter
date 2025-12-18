@@ -4,6 +4,7 @@ import models, schemas
 import difflib
 import logging
 from ai import generate_question, check_similarity
+from datetime import datetime, timedelta
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ def get_questions(db: Session, category: str = None, limit: int = 5, allow_gener
                 new_question = models.Question(
                     id=str(uuid.uuid4()),  # Generate explicit ID
                     encoded_text=ai_data.get("encoded_sentence", "Error"),
-                    original_text=ai_data.get("original_sentence", "Unknown"),
+                    original_text=ai_data.get("target_word", "Unknown"),
                     correct_meaning=ai_data.get("original_meaning", "Error"),
                     category=ai_data.get("category", target_category),
                     difficulty=ai_data.get("difficulty_level", 1),
@@ -84,7 +85,85 @@ def get_questions(db: Session, category: str = None, limit: int = 5, allow_gener
             "category": q.category,
             "correct_count": q.correct_count, 
             "total_attempts": q.total_attempts, 
-            "success_rate": q.success_rate
+            "success_rate": q.success_rate,
+            "created_at": q.created_at
+        } 
+        for q in questions
+    ]
+
+
+def get_daily_questions(db: Session, category: str = None, limit: int = 5):
+    # 1. 오늘 생성된 문제 확인
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    today_start = datetime.strptime(today_str, "%Y-%m-%d")
+    tomorrow_start = today_start + timedelta(days=1)
+    
+    # 프론트엔드와 일치시킨 카테고리 목록
+    ALL_CATEGORIES = ["Politics", "Economy", "Society", "Life/Culture", "IT/Science", "World"]
+    
+    query = db.query(models.Question).filter(
+        models.Question.created_at >= today_start,
+        models.Question.created_at < tomorrow_start
+    )
+    
+    # 카테고리 필터링 적용
+    if category:
+        query = query.filter(models.Question.category == category)
+    else:
+        # 카테고리가 없으면 모든 일일 문제 대상
+        query = query.filter(models.Question.category.in_(ALL_CATEGORIES))
+        
+    questions = query.all()
+    
+    # 2. 문제 생성 로직 (카테고리가 지정된 경우에만 수행)
+    if category:
+        # 요청된 카테고리의 현재 문제 수 확인
+        current_count = len(questions)
+        needed = limit - current_count
+        
+        if needed > 0:
+            logger.info(f"Daily questions for {category} incomplete ({current_count}/{limit}). Generating {needed} more...")
+            
+            for _ in range(needed):
+                logger.info(f"Generating Daily Question for category: {category}")
+                ai_data = generate_question(category=category, difficulty=2)
+                
+                if "error" in ai_data:
+                    logger.error(f"AI Generation Error for {category}: {ai_data['error']}")
+                    continue
+                
+                try:
+                    new_question = models.Question(
+                        id=str(uuid.uuid4()),
+                        encoded_text=ai_data.get("encoded_sentence", "Error"),
+                        original_text=ai_data.get("target_word", "Unknown"),
+                        correct_meaning=ai_data.get("original_meaning", "Error"),
+                        category=category,
+                        difficulty=ai_data.get("difficulty_level", 2),
+                        correct_count=0,
+                        total_attempts=0
+                    )
+                    db.add(new_question)
+                    db.commit()
+                    db.refresh(new_question)
+                    questions.append(new_question)
+                except Exception as e:
+                    logger.error(f"Failed to save Daily Question ({category}): {e}")
+                    db.rollback()
+    
+    # 카테고리가 없는 경우(대시보드 조회 등)는 생성하지 않고 있는 그대로 반환
+    
+    # 3. 반환
+    return [
+        {
+            "id": str(q.id),
+            "encoded": q.encoded_text, 
+            "correct_meaning": q.correct_meaning,
+            "category": q.category,
+            "correct_count": q.correct_count, 
+            "total_attempts": q.total_attempts, 
+            "success_rate": q.success_rate,
+            "created_at": q.created_at
         } 
         for q in questions
     ]

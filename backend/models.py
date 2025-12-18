@@ -21,6 +21,7 @@ class Question(Base):
 
     correct_count = Column(Integer, default=0) # 정답 횟수
     total_attempts = Column(Integer, default=0) # 총 시도 횟수
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # 정답률 계산 속성
     @property

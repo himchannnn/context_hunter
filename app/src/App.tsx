@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import MainScreen from './components/MainScreen';
-import DifficultyScreen from './components/DifficultyScreen';
+
 import GameScreen from './components/GameScreen';
 import DailyResultScreen from './components/DailyResultScreen';
 import ChallengeResultScreen from './components/ChallengeResultScreen';
@@ -219,12 +219,7 @@ function AppContent() {
           />
         )}
 
-        {gameState === 'difficulty' && (
-          <DifficultyScreen
-            onSelectDifficulty={(diff) => startGame(diff, 'random')}
-            onBack={resetGame}
-          />
-        )}
+
 
         {gameState === 'domainSelect' && (
           <DomainSelector

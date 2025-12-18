@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Difficulty, GameResult, GameMode, Question } from '../types';
-import { fetchQuestions, verifyAnswer } from '../lib/api';
+import { fetchQuestions, verifyAnswer, fetchDailyQuestions } from '../lib/api';
 import { Heart } from 'lucide-react';
 import { useSound } from '../context/SoundContext';
 
@@ -42,13 +42,17 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
       setLoading(true);
       setError(null);
       try {
-        const targetCategory = gameMode === 'daily' ? domain : 'random';
-        // 일일 모드는 5문제만 가져오면 됨
-        const limit = gameMode === 'daily' ? 5 : 10;
-        // 도전 모드는 DB 질문 소진 시 종료 (새 질문 생성 안 함)
-        const allowGeneration = gameMode !== 'challenge';
+        let fetchedQuestions: Question[] = [];
 
-        const fetchedQuestions = await fetchQuestions(difficulty, targetCategory, limit, allowGeneration);
+        if (gameMode === 'daily') {
+          // 일일 모드: 전용 API 호출
+          fetchedQuestions = await fetchDailyQuestions(domain);
+        } else {
+          // 도전 모드: 기존 로직
+          // 도전 모드는 DB 질문 소진 시 종료 (새 질문 생성 안 함)
+          const allowGeneration = gameMode !== 'challenge';
+          fetchedQuestions = await fetchQuestions(difficulty, 'random', 10, allowGeneration);
+        }
 
         if (fetchedQuestions.length === 0) {
           if (gameMode === 'challenge') {
@@ -69,7 +73,7 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
     };
 
     loadQuestions();
-  }, [difficulty, gameMode, domain]);
+  }, [difficulty, gameMode, domain, onGameEnd]);
 
   // keydown handler (unchanged)
   // ...
@@ -301,7 +305,12 @@ export default function GameScreen({ difficulty, gameMode, domain, onGameEnd, on
       )}
 
       {/* 문제 표시 영역 */}
-      <div className="bg-card border border-border rounded-lg p-6 md:p-12 text-center">
+      <div className="bg-card border border-border rounded-lg p-6 md:p-12 text-center relative">
+        {questions[currentRound].created_at && (
+          <div className="absolute top-4 right-4 text-xs text-muted-foreground">
+            {new Date(questions[currentRound].created_at).toLocaleDateString()}
+          </div>
+        )}
         <div className="text-sm text-muted-foreground mb-4">암호화된 문장</div>
         <div className="text-xl md:text-2xl tracking-wide text-card-foreground break-keep">{questions[currentRound].encoded}</div>
       </div>

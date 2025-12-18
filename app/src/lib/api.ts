@@ -47,9 +47,35 @@ export const updateDailyProgress = async (token: string | null, date: string, do
   return response.json();
 };
 
-// 정답 확인 및 유사도 검사 요청
-// 정답 확인 및 유사도 검사 요청
-export const verifyAnswer = async (questionId: string, userAnswer: string, token: string | null = null): Promise<VerifyResponse> => {
+// 일일 문제 가져오기 (12-19 추가)
+export const fetchDailyQuestions = async (category?: string): Promise<Question[]> => {
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`; // 토큰이 있다면 첨부 (선택사항, 백엔드 로직에 따라 다름)
+  }
+
+  let url = `${API_BASE_URL}/questions/daily`;
+  if (category) {
+    url += `?category=${encodeURIComponent(category)}`;
+  }
+
+  const response = await fetch(url, {
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch daily questions');
+  }
+
+  const data = await response.json();
+  return data.questions;
+};
+
+// 정답 확인
+export const verifyAnswer = async (questionId: string, userAnswer: string, token?: string): Promise<VerifyResponse> => {
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
