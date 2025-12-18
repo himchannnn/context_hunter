@@ -65,10 +65,11 @@ function AppContent() {
     loadUserRank();
   }, [user, gameState]);
 
-  // Reset check on logout
+  // Reset check on logout or unauthorized access
   useEffect(() => {
     if (!isAuthenticated) {
-      if (gameState !== 'main') {
+      const publicStates: GameState[] = ['main', 'terms', 'privacy', 'contact'];
+      if (!publicStates.includes(gameState)) {
         setGameState('main');
       }
       setResults([]);
