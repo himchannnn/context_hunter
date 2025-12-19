@@ -96,17 +96,24 @@ def get_questions(db: Session, category: str = None, limit: int = 5, allow_gener
 
 
 def get_daily_questions(db: Session, category: str = None, limit: int = 5):
-    # 1. 오늘 생성된 문제 확인
-    today_str = datetime.utcnow().strftime("%Y-%m-%d")
-    today_start = datetime.strptime(today_str, "%Y-%m-%d")
-    tomorrow_start = today_start + timedelta(days=1)
+    # 1. 오늘 날짜 (KST 기준) 확인
+    # KST = UTC + 9
+    now_utc = datetime.utcnow()
+    now_kst = now_utc + timedelta(hours=9)
+    today_date_kst = now_kst.date()
+    
+    # 오늘의 시작과 끝 (KST 기준 00:00 ~ 24:00)을 UTC로 변환하여 쿼리
+    # KST 00:00 = 전날 UTC 15:00
+    start_of_day_kst = datetime(today_date_kst.year, today_date_kst.month, today_date_kst.day)
+    start_of_day_utc = start_of_day_kst - timedelta(hours=9)
+    end_of_day_utc = start_of_day_utc + timedelta(days=1)
     
     # 프론트엔드와 일치시킨 카테고리 목록
     ALL_CATEGORIES = ["Politics", "Economy", "Society", "Life/Culture", "IT/Science", "World"]
     
     query = db.query(models.Question).filter(
-        models.Question.created_at >= today_start,
-        models.Question.created_at < tomorrow_start
+        models.Question.created_at >= start_of_day_utc,
+        models.Question.created_at < end_of_day_utc
     )
     
     # 카테고리 필터링 적용

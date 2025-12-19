@@ -149,7 +149,7 @@ def guest_login(db: Session = Depends(get_db)):
 def read_users_me(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Calculate daily progress count
     if current_user.id != -1:
-        date = datetime.utcnow().strftime("%Y-%m-%d")
+        date = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d")
         progress = crud.get_daily_progress(db, current_user.id, date)
         if progress and progress.cleared_domains:
             # Count non-empty domains

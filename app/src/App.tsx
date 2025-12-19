@@ -83,7 +83,8 @@ function AppContent() {
     if (gameState === 'domainSelect' && isAuthenticated) {
       const fetchProgress = async () => {
         try {
-          const date = new Date().toISOString().split('T')[0];
+          const { getLocalISODate } = await import('./lib/dateUtils');
+          const date = getLocalISODate();
           const token = localStorage.getItem('token');
           if (token) {
             const { getDailyProgress } = await import('./lib/api');

@@ -31,7 +31,8 @@ export default function DailyResultScreen({ results, onRetry, onHome }: DailyRes
         const domain = results[0].question.category;
         if (domain) {
           try {
-            const date = new Date().toISOString().split('T')[0];
+            const { getLocalISODate } = await import('../lib/dateUtils');
+            const date = getLocalISODate();
             const token = localStorage.getItem('token');
             const response = await updateDailyProgress(token, date, domain);
 
